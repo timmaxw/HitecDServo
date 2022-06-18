@@ -1,10 +1,21 @@
 # Main patterns
+## Electrical protocol
+The programmer and the servo communicate via a half-duplex serial connection at 115.2k baud, inverted polarity, 8 bits, no parity bit, 1 stop bit.
+- When idle, the line is low (0V).
+- When the programmer is transmitting, it drives the line low (0V) or high (about 2V).
+- When the servo is transmitting, the programmer weakly pulls the line high (about 2V) and the servo drives it low (0V) to transmit. See "Read" below.
+
 ## Write
 - Programmer sends bytes `0x96 0x00 reg 0x02 low high checksum`, where `checksum = (0x02+reg+0x02+low+high) & 0xFF`.
 - No response from servo.
+- The programmer typically waits 32ms before sending another command.
+
 ## Read
 - Programmer sends `0x96 0x00 reg 0x00 checksum`, where `checksum = (0x00+reg+0x00) & 0xFF` (i.e. the same as `reg`)
-- Servo responds `0x69 0xFE reg 0x02 low high checksum`, where `checksum = (0xFE+reg+0x02+low+high) & 0xFF`.
+- Then, both the servo and the programmer drive the line low. It stays this way for anywhere from about 1ms-15ms, apparently at random. Then, the programmer stops driving the line low and instead weakly pulls it high (~1.3mA drive strength).
+- Exactly 15.2ms after the end of the original transmission, the servo responds `0x69 0xFE reg 0x02 low high checksum`, where `checksum = (0xFE+reg+0x02+low+high) & 0xFF`.
+- After the servo completes its transmission, it stops driving the line low, allowing the programmer to pull it high. It stays this way until 16ms after the programmer originally began pulling the line high.
+- Then the programmer starts driving the line low again, and the read is over.
 
 # Registers
 ## Register 0x22: Unknown
@@ -40,8 +51,8 @@
 - Default servo ID is 0
 
 ## Register 0x64: Sensitivity Ratio
-- 0x0333 (= "20% 819") is lowest legal value
-- 0x0FFF (= "99% 4095") is highest legal value (default)
+- 0x0333 (= "20% 819") is lowest legal value. Note 0x0333 = decimal 819.
+- 0x0FFF (= "99% 4095") is highest legal value (default). Note 0x0FFF = decimal 4095.
 - Read at startup (twice)
 
 ## Register 0x54: Speed
@@ -60,19 +71,19 @@
 - Read at startup
 - 0x0001 when deadband=1 (default)
 - 0x0004 when deadband=2, 0x0008 when deadband=3, ...
-  - Equivalently, 0x0004*deadband-0x0004 when deadband=2..10
+    - Equivalently, 0x0004*deadband-0x0004 when deadband=2..10
 
 ## Register 0x66: Deadband-related (one of three)
 - Not read at startup
 - 0x0005 when deadband=1
 - 0x0008 when deadband=2, 0x000C when deadband=3, ...
-  - Equivalently, 0x0004*deadband when deadband=2..10
+    - Equivalently, 0x0004*deadband when deadband=2..10
 
 ## Register 0x68: Deadband-related (one of three)
 - Not read at startup
 - 0x000B when deadband=1
 - 0x000E when deadband=2, 0x0012 when deadband=3, ...
-  - Equivalently, 0x0004*deadband+0x0006 when deadband=2...10
+    - Equivalently, 0x0004*deadband+0x0006 when deadband=2...10
 
 ## Register 0x60: Soft start
 - Read at startup
@@ -114,7 +125,7 @@
 
 ## Register 0x46: Unknown
 - Written to 0x0001 at startup and in several other situations
-- Anomalous electrical behavior afterwards (need to investigate)
+- About 1.6ms after the end of the write to 0x46 (2.2ms after the start of the write) the servo suddenly draws a lot of current for a few microseconds. The current drawn is more than when the servo moves normally, but more a much shorter period. This causes the supply voltage to dip. At the same time, the data line briefly glitches up to a few hundred millivolts above ground. Because the serial connection uses inverted polarity, a UART listening to the data line may interpret this glitch as an 0xFF byte.
 
 ## Register 0x9C: Overload protection
 - 0x000A means 10% overload protection
@@ -133,32 +144,39 @@
 - Never read; never written with any other value
 
 ## Register 0x1E: Travel
-- Writing `0x0BC2 + 4 * (microseconds - 1500)` to this register makes the servo move to the position specified by `microseconds`.
-- So e.g. writing 0x0BC2 is makes the servo travel to the center position (equivalent to 1500 microseconds).
-- Note the resolution is 0.25 microsecond per unit of this register.
-- In some contexts, 0x0BB8 is treated as the center point rather than 0xBC2.
-- Min point is 0x0190
-- Max point is 0x15E0
-- These are the same values displayed in red text in EPA mode.
+- Writing `0x0BB8 + 4 * (microseconds - 1500)` to this register makes the servo move to the position specified by `microseconds`.
+    - Note the resolution is 0.25 microsecond per unit of this register.
+    - Center position is 0x0BB8, corresponding to 1500us
+    - Min position is 0x0190, corresponding to 850us
+    - Max position is 0x15E0, corresponding to 2150us
+- These are the values displayed in red text in EPA settings mode.
+- DPC-11 GUI "manual setting" mode has inconsistent behavior: When dragging the slider, it will use `0x0BC2 + 4 * (microseconds - 1500)` rather than `0x0BB8 + 4 * (microseconds - 1500)`. However, the buttons labeled "1500", "1000", "2000", etc. will use the 0x0BB8 formula.
+- Approximately 1-3ms after end of the write to 0x1E, the servo begins to actually move. When the motor turns on, the supply voltage dips modestly, but not enough to cause a glitch on the data line.
 
-## Register 0xB2: EPA left?
-- Read on program reset, returns 0x0D35
-- When starting EPA settings mode, read 0x0D35 then write 0x0032
-- On EPA reset, read 0x0D35 then write 0x0D35
-- On EPA set, write to 0x006C (round 2: 0x1969)
-- On CW->CCW, read 0x1969 write 0x1951. On CCW->CW, the reverse.
+## Register 0x0C: Read physical servo position
+- Read-only register that appears to return actual physical servo position
+- Theoretical range is 0x0000-0x3FFF, but the actual range is from approximately 0x02A0-0x3D5F (probably due to manufacturing variation in the specific servo)
+- Depending on 0x5E (direction) register, meaning is inverted:
+    - In CW mode, larger values go clockwise. So if servo is turned counterclockwise to the physical limit (approximately -101 degrees), 0x0C will read approximately 0x02A0; clockwise to the physical limit (approximately +101 degrees), 0x0C will read approximately 0x3D5F.
+    - In CCW mode, larger values go counterclockwise. So if the servo is turned counterclockwise to the physical limit (approximately -101 degrees), 0x0C will read approximately 0x3D5F; clockwise to the physical limit (approximately +101 degrees), 0x0C will read approximately 0x02A0.
 
-## Register 0xC2: EPA center
-- When starting EPA settings mode, read 0x2000 then write 0x2000
-- On EPA reset, read 0x2000 then write 0x2000
-- On EPA set, write to 0x200B (value read from 0x0C) (round 2: 0x2008)
-- On CW->CCW, read 0x2008 write 0x1FF7. On CCW->CW, the reverse.
+## Register 0xB2: EPA left point
+- Describes physical servo position corresponding to a min-length pulse (850us)
+- Follows same convention as 0x0C register.
+- Default value is 0x0D35. This corresponds to approximately -65-75 degrees counterclockwise if 0x5E (direction) is in CW mode (or the reverse in CCW mode)
+- When changing EPA points, value is temporarily set to 0x0032.
 
-## Register 0xB0: EPA right?
-- When starting EPA settings mode, read 0x32CA then write 0x3FCD
-- On EPA reset, read 0x32CA then write 0x32CA
-- On EPA set, write to 0x3FB0 (round 2: 0x26AE)
-- On CW->CCW, read 0x26AE write 0x2696. On CCW->CW, the reverse.
+## Register 0xC2: EPA center point
+- Describes physical servo position corresponding to a mid-length pulse (1500us)
+- Follows same convention as 0x0C register.
+- Default value is 0x2000.
+
+## Register 0xB0: EPA right point
+- Describes physical servo position corresponding to a max-length pulse (2150us)
+    - https://www.servocity.com/d485hw-servo/ claims max-length pulse is 2350us; I believe this is an error.
+- Follows same convention as 0x0C register.
+- Default value is 0x32CA. This corresponds to approximately +65-75 degrees clockwise if 0x5E (direction) is in CW mode (or the reverse in CCW mode)
+- When changing EPA points, value is temporarily set to 0x3FCD.
 
 ## Register 0x50: Unknown
 - When starting EPA settings mode, write 0x3FFF
@@ -169,11 +187,6 @@
 ## Register 0x56: Unknown
 - When starting EPA settings mode, write 0x0190
 - On EPA reset, write 0x0FFF (immediately after writing 0x0FFF to 0x54)
-
-## Register 0x0C: Read current physical position?
-- EPA "Center" button, read 0x200B (round 2: 0x2008)
-- EPA "Left" button, read 0x02DB (round 2: 0x19EB)
-- EPA "Right" button, read 0x3D41 (round 2: 0x262B)
 
 ## Register 0x6E: Reset to factory settings
 - Written to 0x0F0F on program reset
@@ -232,7 +245,7 @@
 
 ## Enable/disable Smart Sense
 1. Write 0x72
-2. Read 0x8A and 0x8C (disabling) or 0xD4 and 0xD6 (enabling)
+2. Read 0x8A and 0x8C (if disabling) or 0xD4 and 0xD6 (if enabling)
 3. Write 0x6C and 0x44 with values that were read
 4. Write 0x70
 5. Read back 0x44 and 0x6C
@@ -246,7 +259,7 @@
 1. Write 0x4C
 2. Read 0xB0, 0xB2, 0xC2 (EPA points)
 3. Write 0x5E (direction flag)
-4. Write 0xB2, 0xB0, 0xC2 with slightly modified values
+4. Write 0xB2, 0xB0, 0xC2 by setting `new_center=0x3FFF-old_center`, `new_left=0x3FFF-old_right`, `new_right=0x3FFF-old_left`.
 5. Write 0x70
 6. Write 0x46
 7. Write 0x22
@@ -264,7 +277,7 @@
 ## Change EPA
 1. Read 0xB2, 0xC2, 0xB0 (EPA points)
 2. Write 0xB0, 0xB2, 0xC2 to extreme/default values: 0xB2=0x0032, 0xC2=0x2000, 0xB0=0x3FCD.
-  - Note on a range from 0x0000 to 0x3FFF, these values are the center and 0x32 away from the extremes.
+    - Note on a range from 0x0000 to 0x3FFF, these values are the center and 0x32 away from the extremes.
 3. Write 0x54 (speed) with 0x0005 (slow-ish? not normally valid)
 4. Write 0x50, 0x52 with 0x3FFF, 0x0000
 5. Write 0x70
@@ -272,10 +285,13 @@
 7. Write 0x56 with 0x0190 (decimal 400...?)
 8. Write 0x1E
 9. When slider is dragged, write 0x1E with number in red.
-  - Note that min=400=0x0190 and max=5600=0x15E0
+    - Note that min=400=0x0190 and max=5600=0x15E0
 10. When Left/Right/Center buttons are pressed, read 0x0C.
-  - Value appears to be on the 0x0000-0x3FFF range.
+    - Value appears to be on the 0x0000-0x3FFF range.
 11. When OK button is pressed, write 0xC2, 0xB0, 0xB2
+    - 0xC2 (EPA center) is set to same value read from 0x0C
+    - 0xB2 (EPA left) is set to `EPA_center + round((left_value_from_0x0C - EPA_center) * (650/600))`. The `650/600` correction factor is because `left_value_from_0x0C` maps to a 900us pulse, but EPA left maps to a 850us pulse. 
+    - 0xB0 (EPA right) is set to `EPA_center + round((right_value_from_0x0C - EPA_center) * (650/600))`. The `650/600` correction factor is because `right_value_from_0x0C` maps to a 2100us pulse, but EPA right maps to a 2150us pulse.
 12. Write 0x54 (speed) with original value
 13. Write 0x1E, delay 1 second
 14. Write 0x56 with 0x0FFF
@@ -289,6 +305,7 @@
 
 ## EPA_Reset
 Starting after step 8 above:
+
 9. Write 0x1E
 10. Write 0x6E (reset all settings)
 11. Write 0x32 (ID number)
@@ -302,6 +319,7 @@ Starting after step 8 above:
 
 ## Cancel EPA change
 Starting after step 8 above:
+
 9. Write 0xB2, 0xC2, 0xB0 (EPA points)
 10. Write 0x1E
 11. Write 0x56 with 0x0FFF
