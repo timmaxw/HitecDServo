@@ -1,5 +1,3 @@
-#include <SoftwareSerial.h>
-
 #define PIN 2
 
 uint8_t pinBitMask;
@@ -14,20 +12,25 @@ void setup() {
   uint8_t port = digitalPinToPort(PIN);
   pinInputRegister = portInputRegister(port);
   pinOutputRegister = portOutputRegister(port);
-
-  pinMode(3, OUTPUT);
-  digitalWrite(3, LOW);
 }
+
+/* We're bit-banging a 115200 baud serial connection, so we need precise timing.
+The AVR libraries have a macro _delay_us() that delays a precise number of
+microseconds, using compile-time floating-point math. However, we also need to
+compensate for the time spent executing instructions, which is a function of the
+CPU time. DELAY_US_COMPENSATED(us, cycles) will delay for an amount of time such
+that if 'cycles' instruction cycles are executed, the total time elapsed will be
+'us'. */
+#define DELAY_US_COMPENSATED(us, cycles) _delay_us((us) - (cycles)/(F_CPU/1e6))
 
 void writeByte(uint8_t value) {
   /* Write start bit. Note polarity is inverted, so start bit is HIGH. */
   *pinOutputRegister |= pinBitMask;
 
   /* We're operating at 115200 baud, so theoretically there should be an 8.68us
-  interval between edges. In practice, I found through trial and error that
-  7.15us produces better results, because some time is taken up by the non-delay
-  instructions as well. */
-  _delay_us(7.15);
+  interval between edges. In practice, this loop seems to take about 25 clock
+  cycles per iteration, so compensate for that. */
+  DELAY_US_COMPENSATED(8.68, 25);
 
   /* Write data bits. */
   for (int m = 0x001; m != 0x100; m <<= 1) {
@@ -36,21 +39,20 @@ void writeByte(uint8_t value) {
     } else {
       *pinOutputRegister |= pinBitMask;
     }
-    _delay_us(7.15);
+    DELAY_US_COMPENSATED(8.68, 25);
   }
 
   /* Write stop bit. */
   *pinOutputRegister &= ~pinBitMask;
-  _delay_us(7.15);
+  DELAY_US_COMPENSATED(8.68, 25);
 }
 
 uint8_t readByte() {
   /* Wait for start bit */
   while (!(*pinInputRegister & pinBitMask)) { }
 
-  /* Delay until approximate center of first data bit. Again, this value was
-  found through trial and error. */
-  _delay_us(11);
+  /* Delay until approximate center of first data bit. */
+  DELAY_US_COMPENSATED(8.68*1.5, 32);
 
   /* Read data bits */
   uint8_t value = 0;
@@ -58,11 +60,8 @@ uint8_t readByte() {
     if(!(*pinInputRegister & pinBitMask)) {
       value |= m;
     }
-    _delay_us(7.5);
+    DELAY_US_COMPENSATED(8.68, 19);
   }
-
-  PORTD |= (1 << PORTD3);
-  PORTD &= ~(1 << PORTD3);
 
   return value;
 }
@@ -101,13 +100,11 @@ void readRegister(uint8_t reg) {
 
   SREG = old_sreg;
 
-  delay(7);
+  delay(14);
 
   /* Note, most of the pull-up force is actually provided by the 2k resistor;
   the microcontroller pullup by itself is nowhere near strong enough. */
   pinMode(PIN, INPUT_PULLUP);
-
-  delay(7);
 
   old_sreg = SREG;
   cli();
@@ -119,7 +116,7 @@ void readRegister(uint8_t reg) {
 
   SREG = old_sreg;
   
-  delay(7);
+  delay(1);
   digitalWrite(PIN, LOW);
   pinMode(PIN, OUTPUT);
 

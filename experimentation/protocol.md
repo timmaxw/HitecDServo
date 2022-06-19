@@ -13,7 +13,7 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 ## Read
 - Programmer sends `0x96 0x00 reg 0x00 checksum`, where `checksum = (0x00+reg+0x00) & 0xFF` (i.e. the same as `reg`)
 - Then, both the servo and the programmer drive the line low. It stays this way for anywhere from about 1ms-15ms, apparently at random. Then, the programmer stops driving the line low and instead weakly pulls it high (~1.3mA drive strength).
-- Exactly 15.2ms after the end of the original transmission, the servo responds `0x69 0xFE reg 0x02 low high checksum`, where `checksum = (0xFE+reg+0x02+low+high) & 0xFF`.
+- Exactly 15.2ms after the end of the original transmission, the servo responds `0x69 mystery reg 0x02 low high checksum`, where `checksum = (mystery+reg+0x02+low+high) & 0xFF`. The `mystery` byte can be either 0xFE or 0x00; I'm not sure why.
 - After the servo completes its transmission, it stops driving the line low, allowing the programmer to pull it high. It stays this way until 16ms after the programmer originally began pulling the line high.
 - Then the programmer starts driving the line low again, and the read is over.
 
