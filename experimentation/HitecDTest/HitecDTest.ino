@@ -47,9 +47,14 @@ void writeByte(uint8_t value) {
   DELAY_US_COMPENSATED(8.68, 25);
 }
 
-uint8_t readByte() {
+int readByte() {
   /* Wait for start bit */
-  while (!(*pinInputRegister & pinBitMask)) { }
+  int counter = 0;
+  while (!(*pinInputRegister & pinBitMask)) {
+    if (++counter == 10000) {
+      return -1;
+    }
+  }
 
   /* Delay until approximate center of first data bit. */
   DELAY_US_COMPENSATED(8.68*1.5, 32);
@@ -84,7 +89,7 @@ void writeRegister(uint8_t reg, uint16_t val) {
   SREG = old_sreg;
 }
 
-void readRegister(uint8_t reg) {
+int readRegister(uint8_t reg, uint16_t *val_out) {
   Serial.println("Trying to read register");
 
   uint8_t old_sreg = SREG;
@@ -109,10 +114,13 @@ void readRegister(uint8_t reg) {
   old_sreg = SREG;
   cli();
 
-  uint8_t reply[7];
-  for (int i = 0; i < 7; ++i) {
-    reply[i] = readByte();
-  }
+  int const_0x69 = readByte();
+  int mystery = readByte();
+  int reg2 = readByte();
+  int const_0x02 = readByte();
+  int low = readByte();
+  int high = readByte();
+  int checksum2 = readByte();
 
   SREG = old_sreg;
   
@@ -120,11 +128,23 @@ void readRegister(uint8_t reg) {
   digitalWrite(PIN, LOW);
   pinMode(PIN, OUTPUT);
 
-  for (int i = 0; i < 7; ++i) {
-    Serial.print("Received: ");
-    Serial.println(reply[i], HEX);
-  }
+  Serial.print("const_0x69: ");
+  Serial.println((uint8_t)const_0x69, HEX);
+  Serial.print("mystery: ");
+  Serial.println((uint8_t)mystery, HEX);
+  Serial.print("reg2: ");
+  Serial.println((uint8_t)reg2, HEX);
+  Serial.print("const_0x02: ");
+  Serial.println((uint8_t)const_0x02, HEX);
+  Serial.print("low: ");
+  Serial.println((uint8_t)low, HEX);
+  Serial.print("high: ");
+  Serial.println((uint8_t)high, HEX);
+  Serial.print("checksum: ");
+  Serial.println((uint8_t)checksum, HEX);
   Serial.println("Done trying to read register");
+
+  *val_out = low + (high << 8);
 }
 
 
@@ -134,5 +154,6 @@ void loop() {
   writeRegister(0x1E, 0x15E0);
   readRegister(0x0C); */
   delay(1000);
-  readRegister(0x06);
+  uint16_t val;
+  readRegister(0x06, &val);
 }
