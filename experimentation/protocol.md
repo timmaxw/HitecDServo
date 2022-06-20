@@ -31,7 +31,7 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - Read at startup, returns 0x0024.
 
 ## Register 0x5E: Direction
-- 0x0000 means clockwise
+- 0x0000 means clockwise (default)
 - 0x0001 means counterclockwise
 - Read (twice) at startup and program reset
 
