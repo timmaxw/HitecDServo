@@ -22,6 +22,10 @@ void HitecDServo::detach() {
 }
 
 int HitecDServo::readModelNumber() {
+  if (!attached()) {
+    return HITECD_ERR_NOT_ATTACHED;
+  }
+
   int res;
   uint16_t modelNumber;
   if ((res = readReg(0x00, &modelNumber)) != HITECD_OK) {
@@ -31,6 +35,10 @@ int HitecDServo::readModelNumber() {
 }
 
 int HitecDServo::readConfig(HitecDServoConfig *configOut) {
+  if (!attached()) {
+    return HITECD_ERR_NOT_ATTACHED;
+  }
+
   int res;
   uint16_t temp, temp2;
 
@@ -155,6 +163,18 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
 }
 
 void HitecDServo::writeConfig(HitecDServoConfig config) {
+  if (!attached()) {
+    return HITECD_ERR_NOT_ATTACHED;
+  }
+
+  int modelNumber = readModelNumber();
+  if (modelNumber < 0) {
+    return modelNumber;
+  }
+  if (modelNumber != 485) {
+    return HITECD_ERR_UNSUPPORTED_MODEL;
+  }
+
   /* Reset to factory settings */
   writeReg(0x6E, 0x0F0F);
 

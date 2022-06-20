@@ -7,6 +7,8 @@
 #define HITECD_ERR_NO_SERVO -1
 #define HITECD_ERR_NO_RESISTOR -2
 #define HITECD_ERR_CORRUPT -3
+#define HITECD_ERR_UNSUPPORTED_MODEL -4
+#define HITECD_ERR_NOT_ATTACHED -5
 
 struct HitecDServoConfig {
   /* `id` is an arbitrary number from 0 to 254. Intended for keeping track of
@@ -20,7 +22,7 @@ struct HitecDServoConfig {
 
   /* `speed` defines how fast the servo moves to a new position, as a percentage
   of maximum speed. Legal values are 10, 20, ... 100. The default is
-  speed=100`. */
+  `speed=100`. */
   int8_t speed;
 
   /* `deadband` defines the servo deadband width, in microseconds. Small values
@@ -100,9 +102,11 @@ public:
   int readModelNumber();
   int readConfig(HitecDServoConfig *config_out);
 
-  void writeConfig(HitecDServoConfig config);
+  int writeConfig(HitecDServoConfig config);
 
 private:
+  friend void debugUnknownModelRegistersToSerial();
+
   void writeByte(uint8_t value);
   int readByte();
 
