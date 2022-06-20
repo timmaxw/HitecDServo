@@ -155,6 +155,77 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
 }
 
 void HitecDServo::writeConfig(HitecDServoConfig config) {
+  /* Reset to factory settings */
+  writeReg(0x6E, 0x0F0F);
+
+  /* Now write any values that differ from factory settings */
+  if (config.id != 0) {
+    writeReg(0x32, config.id);
+  }
+
+  if (config.counterclockwise) {
+    writeReg(0x5E, 0x0001);
+  }
+
+  if (config.speed != 100) {
+    writeReg(0x54, config.speed / 5);
+  }
+
+  if (config.deadband != 1) {
+    writeReg(0x4E, 0x0004*config.deadband - 0x0004);
+    writeReg(0x66, 0x0004*config.deadband);
+    writeReg(0x68, 0x0004*config.deadband + 0x0006);
+  }
+
+  if (config.softStart == 40) {
+    writeReg(0x60, 0x0003);
+  } else if (config.softStart == 60) {
+    writeReg(0x60, 0x0006);
+  } else if (config.softStart == 80) {
+    writeReg(0x60, 0x0008);
+  } else if (config.softStart == 100) {
+    writeReg(0x60, 0x0064);
+  }
+
+  if (config.leftPoint != 3381) {
+    writeReg(0xB2, config.leftPoint);
+  }
+  if (config.centerPoint != 8192) {
+    writeReg(0xC2, config.centerPoint);
+  }
+  if (config.rightPoint != 13002) {
+    writeReg(0xB0, config.rightPoint);
+  }
+
+  if (config.failSafe) {
+    writeReg(0x4C, config.failSafe);
+  } else if (config.failSafeLimp) {
+    writeReg(0x4C, 0x0000);
+  }
+
+  if (config.overloadProtection != 100) {
+    /* TODO we don't write old value, is that OK? */
+    writeReg(0x9C, config.overloadProtection);
+    writeReg(0x98, 0x00C8); /* TODO wtf */
+    writeReg(0x9A, 0x0003);
+  }
+
+  if (!config.smartSense) {
+    /* TODO is this OK? */
+    writeReg(0x72, 0x4E54);
+    writeReg(0x6C, 0x0FA0);
+    writeReg(0x44, 0x6D60);
+  }
+
+  if (config.sensitivityRatio != 4095) {
+    writeReg(0x64, config.sensitivityRatio);
+  }
+
+  /* TODO explain */
+  writeReg(0x70, 0xFFFF);
+  writeReg(0x46, 0x0001);
+  delay(1000); /* TODO try to shorten */
+  writeReg(0x22, 0x0010);
 }
 
 /* We're bit-banging a 115200 baud serial connection, so we need precise timing.

@@ -62,7 +62,7 @@ struct HitecDServoConfig {
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
   then instead the servo will go limp. If `failSafe=0` and `failSafeLimp=false`,
-  the servo will hold its previous position. */
+  the servo will hold its previous position (this is the default). */
   int16_t failSafe;
   bool failSafeLimp;
 
