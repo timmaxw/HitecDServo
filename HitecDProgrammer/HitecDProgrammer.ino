@@ -4,30 +4,35 @@ HitecDServo servo;
 int modelNumber;
 HitecDServoConfig servoConfig;
 
-void printError(int res) {
+void printErr(int res, bool needReset) {
   switch (res) {
   case HITECD_OK:
     return;
   case HITECD_ERR_NO_SERVO:
-    Serial.println("Error: No servo detected.");
+    Serial.println(F("Error: No servo detected."));
     break;
   case HITECD_ERR_NO_RESISTOR:
-    Serial.println("Error: Missing 2k resistor between signal wire and +5V rail.");
+    Serial.println(F("Error: Missing 2k resistor between signal wire and +5V rail."));
     break;
   case HITECD_ERR_CORRUPT:
-    Serial.println("Error: Corrupt response from servo.");
+    Serial.println(F("Error: Corrupt response from servo."));
     break;
   case HITECD_ERR_UNSUPPORTED_MODEL:
     /* Should never happen; we check the model number on startup. */
   case HITECD_ERR_NOT_ATTACHED:
     /* Should never happen; we attach the HitecDServo in setup. */
   default:
-    Serial.println("Error: Unknown error.");
+    Serial.println(F("Error: Unknown error."));
     break;
+  }
+
+  if (needReset) {
+    Serial.println(F("To continue, please reset your Arduino."));
+    while (true) { }
   }
 }
 
-void debugUnknownModelRegistersToSerial() {
+void debugUnknownModel() {
   static uint8_t registersToDebug[] = {
     /* Model number register */
     0x00,
@@ -43,7 +48,22 @@ void debugUnknownModelRegistersToSerial() {
     /* Mystery registers that the DPC-11 always writes to a constant value on the
     D485HW. I want to know if they are set to something else on other models. */
     0x50, 0x52, 0x56, 0x72, 0x98, 0x9A
+  };
+
+  Serial.print(F("Begin debug: "));
+  for (int i = 0; i < sizeof(registersToDebug); ++i) {
+    uint8_t reg = registersToDebug[i];
+    uint16_t temp;
+    int res;
+    if ((res = servo.readRawRegister(reg, &temp)) != HITECD_OK) {
+      printErr(res, true);
+    }
+    Serial.print(reg, HEX);
+    Serial.print(':');
+    Serial.print(temp, HEX);
+    Serial.print(' ');
   }
+  Serial.println(F("End debug."));
 }
 
 char rawInput[128];
@@ -58,7 +78,7 @@ void scanRawInput() {
     discardedLeftoverData = true;
   }
   if (discardedLeftoverData) {
-    Serial.println("Warning: Ignoring unexpected input in serial buffer.");
+    Serial.println(F("Warning: Ignoring unexpected input in serial buffer."));
   }
 
   rawInputLen = 0;
@@ -66,7 +86,7 @@ void scanRawInput() {
     if (!Serial.available()) {
       continue;
     }
-    char next = Serial.peek();
+    char next = Serial.read();
     if (next == '\r' || next == '\n') {
       if (rawInputLen < sizeof(rawInput)) {
         if (next == '\r') {
@@ -81,7 +101,7 @@ void scanRawInput() {
         error, and restart. */
         delay(1000);
         while (Serial.available()) Serial.read();
-        Serial.println("Error: Input was too long. Please try again:");
+        Serial.println(F("Error: Input was too long. Please try again:"));
         rawInputLen = 0;
         continue;
       }
@@ -95,85 +115,148 @@ void scanRawInput() {
   }
 }
 
+int16_t scanNumber(bool allowEmptyAsNegativeOne, bool quarters=false) {
+  while (true) {
+    scanRawInput();
+
+    if (rawInputLen == 0) {
+      if (allowEmptyAsNegativeOne) {
+        return -1;
+      } else {
+        Serial.println(F("Error: Input was empty. Please try again:"));
+        continue;
+      }
+    }
+
+    bool negative = (rawInput[0] == '-');
+    int i = (negative ? 1 : 0);
+    if (rawInputLen == i) {
+      Serial.println(F("Error: Invalid input. Please try again:"));
+      continue;
+    }
+
+    int16_t number = 0;
+    while (i < rawInputLen && rawInput[i] >= '0' && rawInput[i] <= '9') {
+      number = number * 10 + (rawInput[i] - '0');
+      ++i;
+    }
+
+    if (quarters) {
+      /* In "quarters" mode, we allow numbers to end in .0, .25, .5, .75; the value
+      we return is multiplied by 4. (We don't support floating point in general.) */
+      number *= 4;
+      if (i < rawInputLen && rawInput[i] == '.') {
+        ++i;
+        if (i < rawInputLen && rawInput[i] == '0') {
+          i += 1;
+        } else if (i + 1 < rawInputLen && rawInput[i] == '2' && rawInput[i+1] == '5') {
+          number += 1;
+          i += 2;
+        } else if (i < rawInputLen && rawInput[i] == '5') {
+          number += 2;
+          i += 1;
+        } else if (i < rawInputLen && rawInput[i] == '7' && rawInput[i+1] == '5') {
+          number += 3;
+          i += 2;
+        } else {
+          Serial.println(F("Error: Invalid input. Please try again:"));
+          continue;
+        }
+        while (i < rawInputLen && rawInput[i] == '0') {
+          ++i;
+        }
+      }
+    }
+
+    if (i != rawInputLen) {
+      Serial.println(F("Error: Invalid input. Please try again:"));
+      continue;
+    }
+
+    if (negative) number = -number;
+    return number;
+  }
+}
+
 void printConfig() {
-  Serial.print("ID: ");
+  Serial.print(F("ID: "));
   Serial.println(servoConfig.id, DEC);
 
-  Serial.print("Direction: ");
+  Serial.print(F("Direction: "));
   if (servoConfig.counterclockwise) {
-    Serial.println("Counterclockwise");
+    Serial.println(F("Counterclockwise"));
   } else {
-    Serial.println("Clockwise");
+    Serial.println(F("Clockwise"));
   }
 
-  Serial.print("Speed: ");
+  Serial.print(F("Speed: "));
   Serial.println(servoConfig.speed, DEC);
 
-  Serial.print("Deadband: ");
+  Serial.print(F("Deadband: "));
   Serial.println(servoConfig.deadband, DEC);
 
-  Serial.print("Soft start: ");
+  Serial.print(F("Soft start: "));
   Serial.println(servoConfig.softStart, DEC);
 
-  Serial.print("Left point: ");
+  Serial.print(F("Left point: "));
   Serial.println(servoConfig.leftPoint, DEC);
-  Serial.print("Center point: ");
+  Serial.print(F("Center point: "));
   Serial.println(servoConfig.centerPoint, DEC);
-  Serial.print("Right point: ");
+  Serial.print(F("Right point: "));
   Serial.println(servoConfig.rightPoint, DEC);
 
-  Serial.print("Fail safe: ");
+  Serial.print(F("Fail safe: "));
   if (servoConfig.failSafe) {
     Serial.println(servoConfig.failSafe, DEC);
   } else if (servoConfig.failSafeLimp) {
-    Serial.println("Limp");
+    Serial.println(F("Limp"));
   } else {
-    Serial.println("Off");
+    Serial.println(F("Off"));
   }
 
-  Serial.print("Overload protection: ");
+  Serial.print(F("Overload protection: "));
   Serial.println(servoConfig.overloadProtection, DEC);
 
-  Serial.print("Smart sense: ");
+  Serial.print(F("Smart sense: "));
   if (servoConfig.smartSense) {
-    Serial.println("On");
+    Serial.println(F("On"));
   } else {
-    Serial.println("Off");
+    Serial.println(F("Off"));
   }
 
-  Serial.print("Sensitivity ratio: ");
+  Serial.print(F("Sensitivity ratio: "));
   Serial.println(servoConfig.sensitivityRatio, DEC);
 }
 
 void setup() {
   Serial.begin(115200);
 
-  servo.attach(2);
+  Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
+  int pin = scanNumber(false);
+  servo.attach(pin);
 
   Serial.println("Reading model number...");
   modelNumber = servo.readModelNumber();
   if (modelNumber < 0) {
-    printError(modelNumber);
-    while (true) { }
+    printErr(modelNumber, true);
   }
   Serial.print("Model number: D");
   Serial.println(modelNumber, DEC);
 
   if (modelNumber != 485) {
-    Serial.println("Warning: Your servo model is not fully supported. "
+    Serial.println(F("Warning: Your servo model is not fully supported. "
       "Currently, only the D485HW model is fully supported. To improve support "
       "for your servo model, please open a GitHub issue at "
-      "https://github.com/timmaxw/HitecDServo/issues/new and include the "
-      "following information:\n");
-    debugUnknownModelRegistersToSerial();
-    
+      "https://github.com/timmaxw/HitecDServo/issues/new. Include the "
+      "following debug information. (And if you had changed any settings from "
+      "their defaults, please also make a note of that.) Thanks!"));
+    debugUnknownModel();
   }
 
-  Serial.println("Reading configuration...");
+  Serial.println(F("Reading configuration..."));
   int res = servo.readConfig(&servoConfig);
   if (res < 0) {
-    printError(res);
-    while (true) { }
+    printErr(res, true);
   }
   printConfig();
 }
