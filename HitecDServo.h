@@ -10,10 +10,12 @@
 #define HITECD_ERR_UNSUPPORTED_MODEL -4
 #define HITECD_ERR_NOT_ATTACHED -5
 
+const char *hitecdErrToString(int err);
+
 struct HitecDServoConfig {
   /* The default constructor initializes the settings to factory-default values.
 
-  `leftPoint`, `centerPoint`, and `rightPoint` will be set to -1; this isn't the
+  `leftPoint14Bit`, `centerPoint14Bit`, and `rightPoint14Bit` will be set to -1; this isn't the
   factory-default value, but it will cause `writeConfig()` to keep the factory-
   default value. */
   HitecDServoConfig();
@@ -28,12 +30,13 @@ struct HitecDServoConfig {
   turn counterclockwise.
   
   Note: Switching the servo direction will invert the meaning of the
-  `leftPoint`, `rightPoint`, and `centerPoint` settings. If you've changed those
-  settings to non-default values, you can use the following formulas to convert
-  between the clockwise values and equivalent counterclockwise values:
-    ccwSettings.leftPoint   = 16383 - cwSettings.rightPoint;
-    ccwSettings.centerPoint = 16383 - cwSettings.centerPoint;
-    ccwSettings.rightPoint  = 16383 - cwSettings.leftPoint;
+  `leftPoint14Bit`, `rightPoint14Bit`, and `centerPoint14Bit` settings. If
+  you've changed those settings to non-default values, you can use the following
+  formulas to convert between the clockwise values and equivalent
+  counterclockwise values:
+    ccwSettings.leftPoint14Bit   = 16383 - cwSettings.rightPoint14Bit;
+    ccwSettings.centerPoint14Bit = 16383 - cwSettings.centerPoint14Bit;
+    ccwSettings.rightPoint14Bit  = 16383 - cwSettings.leftPoint14Bit;
   */
   bool counterclockwise;
   static const bool counterclockwiseDefault = false;
@@ -59,37 +62,39 @@ struct HitecDServoConfig {
   int8_t softStart;
   static const int8_t softStartDefault = 20;
 
-  /* `leftPoint`, `centerPoint` and `rightPoint` define how servo pulse
-  widths are related to physical servo positions:
-  - `leftPoint` defines the position that corresponds to a 850us pulse
-  - `centerPoint` defines the position that corresponds to a 1500us pulse
-  - `rightPoint` defines the position that corresponds to a 2150us pulse
+  /* `leftPoint14Bit`, `centerPoint14Bit` and `rightPoint14Bit` define how servo
+  pulse widths are related to physical servo positions:
+  - `leftPoint14Bit` defines the position that corresponds to a 850us pulse
+  - `centerPoint14Bit` defines the position that corresponds to a 1500us pulse
+  - `rightPoint14Bit` defines the position that corresponds to a 2150us pulse
 
-  The positions are defined by numbers ranging from 0 to 16383. If
-  `counterclockwise=false`, higher numbers are clockwise. But if
-  `counterclockwise=true`, higher numbers are counterclockwise; this means that
-  `leftPoint < rightPoint < centerPoint`, even though this makes the "left"
-  point clockwise of center, and the "right" point counterclockwise of center.
+  The positions are defined by numbers ranging from 0 to 16383 (the largest
+  number that fits into 14 bits, hence the name). If `counterclockwise=false`,
+  higher numbers are clockwise. But if `counterclockwise=true`, higher numbers
+  are counterclockwise; this means that `leftPoint14Bit < centerPoint14Bit <
+  rightPoint14Bit`, even though this makes the "left" point clockwise of center,
+  and the "right" point counterclockwise of center.
 
   If you call writeConfig() with these values set to -1, then the
   factory-default values will be kept. */
-  int16_t leftPoint, centerPoint, rightPoint;
+  int16_t leftPoint14Bit, centerPoint14Bit, rightPoint14Bit;
 
-  /* Convenience functions to return the factory-default values of `leftPoint`,
-  `rightPoint`, and `centerPoint` for the given servo model. Right now this only
+  /* Convenience functions to return the factory-default values of `leftPoint14Bit`,
+  `rightPoint14Bit`, and `centerPoint14Bit` for the given servo model. Right now this only
   works for the D485HW; other models will return -1. */
-  static int16_t leftPointDefault(int modelNumber);
-  static int16_t centerPointDefault(int modelNumber);
-  static int16_t rightPointDefault(int modelNumber);
+  static int16_t leftPoint14BitDefault(int modelNumber);
+  static int16_t centerPoint14BitDefault(int modelNumber);
+  static int16_t rightPoint14BitDefault(int modelNumber);
 
   /* The factory-default values usually produce a narrower movement range than
   the servo is physically capable of (e.g. for the D485HW, the factory-default
   values produce a 147 degree range, but the servo can actually do 201 degrees.)
-  To access the full range of motion, set `leftPoint=leftPointFullRange(model)`
-  and `rightPoint=rightPointFullRange(model)`. Right now this only works for the
-  D485HW; other models will return -1. */
-  static int16_t leftPointFullRange(int modelNumber);
-  static int16_t rightPointFullRange(int modelNumber);
+  To access the full range of motion, set
+    leftPoint14Bit = leftPoint14BitFullRange(model)
+    rightPoint14Bit = rightPoint14BitFullRange(model)
+  (Right now this only works for the D485HW; other models will return -1.) */
+  static int16_t leftPoint14BitFullRange(int modelNumber);
+  static int16_t rightPoint14BitFullRange(int modelNumber);
 
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
@@ -134,8 +139,10 @@ public:
   bool attached();
   void detach();
 
-  int readModelNumber();
+  void writeTargetPointQuarterMicros(int16_t quarter_micros);
+  int16_t readActualPoint14Bit();
 
+  int readModelNumber();
   int readConfig(HitecDServoConfig *config_out);
 
   /* Resets the servo to its factory-default configuration, then uploads the
@@ -165,6 +172,8 @@ private:
   int pin;
   uint8_t pinBitMask;
   volatile uint8_t *pinInputRegister, *pinOutputRegister;
+
+  int16_t leftPoint14Bit, centerPoint14Bit, rightPoint14Bit;
 };
 
 #endif /* HitecDServo_h */

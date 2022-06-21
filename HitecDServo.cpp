@@ -1,14 +1,34 @@
 #include "HitecDServo.h"
 
+const char *hitecdErrToString(int err) {
+  if (err >= 0) {
+    return "OK";
+  }
+  switch (err) {
+    case HITECD_ERR_NO_SERVO:
+      return "No servo detected";
+    case HITECD_ERR_NO_RESISTOR:
+      return "Missing 2k resistor between signal wire and +5V";
+    case HITECD_ERR_CORRUPT:
+      return "Corrupt response from servo";
+    case HITECD_ERR_UNSUPPORTED_MODEL:
+      return "Unsupported model of Hitec D servo (only D485HW is supported)";
+    case HITECD_ERR_NOT_ATTACHED:
+      return "Not attached; need to call attach()";
+    default:
+      return "Unknown error";
+  }
+}
+
 HitecDServoConfig::HitecDServoConfig() :
   id(idDefault),
   counterclockwise(counterclockwiseDefault),
   speed(speedDefault),
   deadband(deadbandDefault),
   softStart(softStartDefault),
-  leftPoint(-1),
-  centerPoint(-1),
-  rightPoint(-1),
+  leftPoint14Bit(-1),
+  centerPoint14Bit(-1),
+  rightPoint14Bit(-1),
   failSafe(failSafeDefault),
   failSafeLimp(failSafeLimpDefault),
   overloadProtection(overloadProtectionDefault),
@@ -16,35 +36,35 @@ HitecDServoConfig::HitecDServoConfig() :
   sensitivityRatio(sensitivityRatioDefault)
 { }
 
-int16_t HitecDServoConfig::leftPointDefault(int modelNumber) {
+int16_t HitecDServoConfig::leftPoint14BitDefault(int modelNumber) {
   switch (modelNumber) {
     case 485: return 3381;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::centerPointDefault(int modelNumber) {
+int16_t HitecDServoConfig::centerPoint14BitDefault(int modelNumber) {
   switch (modelNumber) {
     case 485: return 8192;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::rightPointDefault(int modelNumber) {
+int16_t HitecDServoConfig::rightPoint14BitDefault(int modelNumber) {
   switch (modelNumber) {
     case 485: return 13002;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::leftPointFullRange(int modelNumber) {
+int16_t HitecDServoConfig::leftPoint14BitFullRange(int modelNumber) {
   switch (modelNumber) {
     case 485: return 1646;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::rightPointFullRange(int modelNumber) {
+int16_t HitecDServoConfig::rightPoint14BitFullRange(int modelNumber) {
   switch (modelNumber) {
     case 485: return 14736;
     default: return -1;
@@ -62,6 +82,8 @@ void HitecDServo::attach(int _pin) {
   uint8_t port = digitalPinToPort(pin);
   pinInputRegister = portInputRegister(port);
   pinOutputRegister = portOutputRegister(port);
+
+  leftPoint14Bit = centerPoint14Bit = rightPoint14Bit = -1;
 }
 
 bool HitecDServo::attached() {
@@ -70,6 +92,26 @@ bool HitecDServo::attached() {
 
 void HitecDServo::detach() {
   pin = -1;
+}
+
+void HitecDServo::writeTargetPointQuarterMicros(int16_t quarter_micros) {
+  if (!attached()) {
+    return;
+  }
+  writeRawRegister(0x1E, quarter_micros - 3000);
+}
+
+int16_t HitecDServo::readActualPoint14Bit() {
+  if (!attached()) {
+    return HITECD_ERR_NOT_ATTACHED;
+  }
+
+  int res;
+  uint16_t actualPoint;
+  if ((res = readRawRegister(0x0C, &actualPoint)) != HITECD_OK) {
+    return res;
+  }
+  return actualPoint;
 }
 
 int HitecDServo::readModelNumber() {
@@ -165,19 +207,19 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
     return HITECD_ERR_CORRUPT;
   }
 
-  /* Read leftPoint, centerPoint, rightPoint */
+  /* Read leftPoint14Bit, centerPoint14Bit, rightPoint14Bit */
   if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->leftPoint = temp;
+  configOut->leftPoint14Bit = leftPoint14Bit = temp;
   if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->centerPoint = temp;
+  configOut->centerPoint14Bit = centerPoint14Bit = temp;
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->rightPoint = temp;
+  configOut->rightPoint14Bit = rightPoint14Bit = temp;
 
   /* Read failSafe and failSafeLimp. (A single register controls both.) */
   if ((res = readRawRegister(0x4C, &temp)) != HITECD_OK) {
@@ -256,6 +298,9 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
   const HitecDServoConfig &config,
   bool bypassModelNumberCheck
 ) {
+  int res;
+  uint16_t temp;
+
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
   }
@@ -323,18 +368,38 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
     }
   }
 
-  /* Write leftPoint, centerPoint, and rightPoint */
-  if (config.leftPoint != -1 &&
-      config.leftPoint != HitecDServoConfig::leftPointDefault(modelNum)) {
-    writeRawRegister(0xB2, config.leftPoint);
+  /* Write leftPoint14Bit, centerPoint14Bit, and rightPoint14Bit. Also, record the values in
+  instance variables for readActualPointMicros() to use. (If we're using the
+  default values, then read them back into instance variables.) */
+  if (config.leftPoint14Bit != -1 &&
+      config.leftPoint14Bit != HitecDServoConfig::leftPoint14BitDefault(modelNum)) {
+    writeRawRegister(0xB2, config.leftPoint14Bit);
+    leftPoint14Bit = config.leftPoint14Bit;
+  } else {
+    if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
+      return res;
+    }
+    leftPoint14Bit = temp;
   }
-  if (config.centerPoint != -1 &&
-      config.centerPoint != HitecDServoConfig::centerPointDefault(modelNum)) {
-    writeRawRegister(0xC2, config.centerPoint);
+  if (config.centerPoint14Bit != -1 &&
+      config.centerPoint14Bit != HitecDServoConfig::centerPoint14BitDefault(modelNum)) {
+    writeRawRegister(0xC2, config.centerPoint14Bit);
+    centerPoint14Bit = config.centerPoint14Bit;
+  } else {
+    if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+      return res;
+    }
+    centerPoint14Bit = temp;
   }
-  if (config.rightPoint != -1 &&
-      config.rightPoint != HitecDServoConfig::rightPointDefault(modelNum)) {
-    writeRawRegister(0xB0, config.rightPoint);
+  if (config.rightPoint14Bit != -1 &&
+      config.rightPoint14Bit != HitecDServoConfig::rightPoint14BitDefault(modelNum)) {
+    writeRawRegister(0xB0, config.rightPoint14Bit);
+    rightPoint14Bit = config.rightPoint14Bit;
+  } else {
+     if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
+      return res;
+    }
+    rightPoint14Bit = temp;
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */
@@ -359,9 +424,6 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
 
     /* To disable smartSense, we have to write 0x6C and 0x44 to magic numbers
     that we read from two read-only registers, 0x8A and 0x8C. */
-    int res;
-    uint16_t temp;
-
     if ((res = readRawRegister(0x8A, &temp)) != HITECD_OK) {
       return res;
     }

@@ -5,26 +5,12 @@ int modelNumber;
 HitecDServoConfig servoConfig;
 
 void printErr(int res, bool needReset) {
-  switch (res) {
-  case HITECD_OK:
+  if (res == HITECD_OK) {
     return;
-  case HITECD_ERR_NO_SERVO:
-    Serial.println(F("Error: No servo detected."));
-    break;
-  case HITECD_ERR_NO_RESISTOR:
-    Serial.println(F("Error: Missing 2k resistor between signal wire and +5V rail."));
-    break;
-  case HITECD_ERR_CORRUPT:
-    Serial.println(F("Error: Corrupt response from servo."));
-    break;
-  case HITECD_ERR_UNSUPPORTED_MODEL:
-    /* Should never happen; we check the model number on startup. */
-  case HITECD_ERR_NOT_ATTACHED:
-    /* Should never happen; we attach the HitecDServo in setup. */
-  default:
-    Serial.println(F("Error: Unknown error."));
-    break;
   }
+
+  Serial.print(F("Error: "));
+  Serial.println(hitecdErrToString(res));
 
   if (needReset) {
     Serial.println(F("To continue, please reset your Arduino."));
@@ -32,7 +18,7 @@ void printErr(int res, bool needReset) {
   }
 }
 
-void debugUnknownModel() {
+void printRegisterDump() {
   static uint8_t registersToDebug[] = {
     /* Model number register */
     0x00,
@@ -198,12 +184,12 @@ void printConfig() {
   Serial.print(F("Soft start: "));
   Serial.println(servoConfig.softStart, DEC);
 
-  Serial.print(F("Left point: "));
-  Serial.println(servoConfig.leftPoint, DEC);
-  Serial.print(F("Center point: "));
-  Serial.println(servoConfig.centerPoint, DEC);
-  Serial.print(F("Right point: "));
-  Serial.println(servoConfig.rightPoint, DEC);
+  Serial.print(F("Left point (14-bit): "));
+  Serial.println(servoConfig.leftPoint14Bit, DEC);
+  Serial.print(F("Center point (14-bit): "));
+  Serial.println(servoConfig.centerPoint14Bit, DEC);
+  Serial.print(F("Right point (14-bit): "));
+  Serial.println(servoConfig.rightPoint14Bit, DEC);
 
   Serial.print(F("Fail safe: "));
   if (servoConfig.failSafe) {
@@ -250,7 +236,7 @@ void setup() {
       "https://github.com/timmaxw/HitecDServo/issues/new. Include the "
       "following debug information. (And if you had changed any settings from "
       "their defaults, please also make a note of that.) Thanks!"));
-    debugUnknownModel();
+    printRegisterDump();
   }
 
   Serial.println(F("Reading configuration..."));
