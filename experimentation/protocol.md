@@ -16,6 +16,7 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - Exactly 15.2ms after the end of the original transmission, the servo responds `0x69 mystery reg 0x02 low high checksum`, where `checksum = (mystery+reg+0x02+low+high) & 0xFF`. The `mystery` byte can be either 0xFE or 0x00; I'm not sure why.
 - After the servo completes its transmission, it stops driving the line low, allowing the programmer to pull it high. It stays this way until 16ms after the programmer originally began pulling the line high.
 - Then the programmer starts driving the line low again, and the read is over.
+- Note, all valid registers are even-numbered. Attempting to read an odd-numbered register gives 0xLLHH, where 0xHH is the high byte of the previous register, and 0xLL is the low byte of the next register. (Attempting to read 0xFF returns 0x0000, even though 0x00 has a non-zero low byte.)
 
 # Registers
 ## Register 0x22: Unknown
@@ -151,6 +152,7 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - These are the values displayed in red text in EPA settings mode.
 - DPC-11 GUI "manual setting" mode has inconsistent behavior: When dragging the slider, it will use `0x0BC2 + 4 * (microseconds - 1500)` rather than `0x0BB8 + 4 * (microseconds - 1500)`. However, the buttons labeled "1500", "1000", "2000", etc. will use the 0x0BB8 formula.
 - Approximately 1-3ms after end of the write to 0x1E, the servo begins to actually move. When the motor turns on, the supply voltage dips modestly, but not enough to cause a glitch on the data line.
+- Cannot be read back.
 
 ## Register 0x0C: Read physical servo position
 - Read-only register that appears to return actual physical servo position
@@ -190,6 +192,35 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 ## Register 0x6E: Reset to factory settings
 - Written to 0x0F0F on program reset
 - Written to 0x0F0F on EPA reset
+
+## Register 0xE4: Target point?
+- When register 0x1E is written, 0xE4 appears to be updated with the target point as measured in the same units as the 0x0C register.
+
+## Register 0xDC: Unknown
+- Typically returns approximately the same value as 0x0C.
+
+## Register 0xE0: Unknown
+- Typically returns approximately the same value as 0x0C.
+
+## Register 0x0E: Unknown
+- Appears to be some kind of time-derivative of 0x0C.
+- Signed integer.
+- Typically 0, 1, or -1 when servo is stationary; larger values when moving.
+
+## Register 0xDE: Unknown
+- Appears to be some kind of time-derivative of 0x0C.
+- Signed integer.
+- Typically 0, 1, or -1 when servo is stationary; larger values when moving.
+
+## Register 0xEA: Unknown
+- Difference between register 0x0C and register 0xE4.
+- Signed integer.
+
+## Register 0xEC: Unknown
+- Seems to be 0x0000 when servo is traveling to higher numbers, 0xFFFF when traveling to lower numbers.
+
+## Register 0xFC: Unknown
+- Cycles from 0x0000->0x0001->...->0x0004->0x0000 with a period of about 1 second.
 
 # Procedures
 ## Initial connection
