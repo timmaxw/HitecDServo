@@ -58,15 +58,41 @@ int16_t HitecDServoConfig::rightPoint14BitDefault(int modelNumber) {
 }
 
 int16_t HitecDServoConfig::leftPoint14BitFullRange(int modelNumber) {
+  int16_t c = centerPoint14BitDefault(modelNumber);
+  int16_t l = leftPoint14BitDefault(modelNumber);
+  if (c == -1 || l == -1) {
+    return -1;
+  }
+  return c + (
+    (l - c)
+    * degreesFullRange(modelNumber)
+    / degreesDefault(modelNumber)
+  );
+}
+
+int16_t HitecDServoConfig::rightPoint14BitFullRange(int modelNumber) {
+  int16_t c = centerPoint14BitDefault(modelNumber);
+  int16_t r = rightPoint14BitDefault(modelNumber);
+  if (c == -1 || r == -1) {
+    return -1;
+  }
+  return c + (
+    (r - c)
+    * degreesFullRange(modelNumber)
+    / degreesDefault(modelNumber)
+  );
+}
+
+float HitecDServoConfig::degreesDefault(int modelNumber) {
   switch (modelNumber) {
-    case 485: return 1646;
+    case 485: return 127.5;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::rightPoint14BitFullRange(int modelNumber) {
+float HitecDServoConfig::degreesFullRange(int modelNumber) {
   switch (modelNumber) {
-    case 485: return 14736;
+    case 485: return 185;
     default: return -1;
   }
 }
@@ -445,8 +471,8 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
   do the same to be safe. */
   writeRawRegister(0x70, 0xFFFF);
   writeRawRegister(0x46, 0x0001);
-  delay(1000); /* TODO try to shorten */
-  writeRawRegister(0x22, 0x1000);
+  delay(1000);
+  // writeRawRegister(0x22, 0x1000);
 }
 
 int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
@@ -556,9 +582,9 @@ time elapsed will be 'us'. */
 #define DELAY_US_COMPENSATED(us, cycles) _delay_us((us) - (cycles)/(F_CPU/1e6))
 
 int HitecDServo::readByte() {
-  /* Wait up to 4ms for start bit. The "/ 15" factor arises because this loop
+  /* Wait up to 10ms for start bit. The "/ 15" factor arises because this loop
   empirically takes about 15 clock cycles per iteration. */
-  int timeoutCounter = F_CPU * 0.004 / 15;
+  int timeoutCounter = F_CPU * 0.010 / 15;
   while (!(*pinInputRegister & pinBitMask)) {
     if (--timeoutCounter == 0) {
       return HITECD_ERR_NO_SERVO;

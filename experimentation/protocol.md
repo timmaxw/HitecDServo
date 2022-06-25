@@ -5,6 +5,8 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - When the programmer is transmitting, it drives the line low (0V) or high (about 2V).
 - When the servo is transmitting, the programmer weakly pulls the line high (about 2V) and the servo drives it low (0V) to transmit. See "Read" below.
 
+If the servo receives a serial command, it will disregard any subsequent PWM pulses it receives, until it's reset by cycling the power or writing register 0x46 (see below). However, the reverse is not true; if the servo receives PWM pulses, followed by a serial command, it will respect the serial command as normal.
+
 ## Write
 - Programmer sends bytes `0x96 0x00 reg 0x02 low high checksum`, where `checksum = (0x02+reg+0x02+low+high) & 0xFF`.
 - No response from servo.
@@ -20,7 +22,10 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 
 # Registers
 ## Register 0x22: Unknown
-- Written to 0x1000 at startup, and after many other operations. (Note about convention: 0x1000 means `low=0x00` and `high=0x10`.)
+- Written 0x1000 after any operation that changes EPA points or servo direction. (Note about convention: 0x1000 means `low=0x00` and `high=0x10`.)
+- Also written 0x1000 on initial connection, and after changing servo ID. (Not sure why!)
+- When read back, always returns 0x07D0.
+- No apparent effect.
 
 ## Register 0x06: Unknown
 - Read at startup, returns 0x4ABF.
@@ -65,8 +70,9 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - Read at startup, then written back
 - Written to 0x0005 when starting EPA settings mode
 
-## Register 0x70: Unknown
-- Written to 0xFFFF at startup, and after many other operations.
+## Register 0x70: Save settings to EEPROM
+- When 0x70 is written with 0xFFFF, the servo will write its settings from SRAM to EEPROM.
+- If settings have not been saved to EEPROM, they will be lost when the servo loses power or is reset (see register 0x46)
 
 ## Register 0x4E: Deadband-related (one of three)
 - Read at startup
@@ -123,8 +129,10 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - Written to 0x6D60 when disabling Smart Sense; then read back
 - Written to 0x36B0 when enabling Smart Sense; then read back
 
-## Register 0x46: Unknown
-- Written to 0x0001 at startup and in several other situations
+## Register 0x46: Reset servo
+- Resets the servo's microcontroller. Any settings not flushed to EEPROM (see register 0x70) will be lost.
+- Written to 0x0001 after many (but not all) changes to settings.
+- For a period of about 1s after the write to 0x46, or after power-on, the servo will ignore all commands (either PWM or serial).
 - About 1.6ms after the end of the write to 0x46 (2.2ms after the start of the write) the servo suddenly draws a lot of current for a few microseconds. The current drawn is more than when the servo moves normally, but more a much shorter period. This causes the supply voltage to dip. At the same time, the data line briefly glitches up to a few hundred millivolts above ground. Because the serial connection uses inverted polarity, a UART listening to the data line may interpret this glitch as an 0xFF byte.
 
 ## Register 0x9C: Overload protection

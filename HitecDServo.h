@@ -96,6 +96,11 @@ struct HitecDServoConfig {
   static int16_t leftPoint14BitFullRange(int modelNumber);
   static int16_t rightPoint14BitFullRange(int modelNumber);
 
+  /* Degrees of motion corresponding to the default and full-range values listed
+  above. */
+  static float degreesDefault(int modelNumber);
+  static float degreesFullRange(int modelNumber);
+
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
   then instead the servo will go limp. If `failSafe=0` and `failSafeLimp=false`,
