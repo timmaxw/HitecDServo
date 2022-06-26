@@ -238,8 +238,10 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 ## Register 0xFC: Unknown
 - Cycles from 0x0000->0x0001->...->0x0004->0x0000 with a period of about 1 second.
 
-## Register 0x10: Unknown
+## Register 0x10: Actual motor power
 - Signed integer.
+- Appears to describe the actual motor power. Ranges from approximately -2000 (max power in one direction) to +2000 (max power in other direction). If motor is not powered, returns zero.
+- Uses the same units as 0x56 and 0x22. E.g. if we are hitting the power limit, then 0x10 will read the same value as 0x22, or negative the value of 0x22.
 
 # Procedures
 ## Initial connection
