@@ -9,97 +9,77 @@ const char *hitecdErrToString(int err) {
       return "No servo detected";
     case HITECD_ERR_NO_RESISTOR:
       return "Missing 2k resistor between signal wire and +5V";
-    case HITECD_ERR_CORRUPT:
+    case HITECD_ERR_CORRUPT: /* TODO: Split into "bad checksum" and "unexpected behavior" */
       return "Corrupt response from servo";
     case HITECD_ERR_UNSUPPORTED_MODEL:
       return "Unsupported model of Hitec D servo (only D485HW is supported)";
     case HITECD_ERR_NOT_ATTACHED:
-      return "Not attached; need to call attach()";
+      return "Not attached. Check if call to attach() failed.";
     default:
       return "Unknown error";
   }
 }
 
 HitecDServoConfig::HitecDServoConfig() :
-  id(idDefault),
-  counterclockwise(counterclockwiseDefault),
-  speed(speedDefault),
-  deadband(deadbandDefault),
-  softStart(softStartDefault),
-  leftPoint14Bit(-1),
-  centerPoint14Bit(-1),
-  rightPoint14Bit(-1),
-  failSafe(failSafeDefault),
-  failSafeLimp(failSafeLimpDefault),
-  overloadProtection(overloadProtectionDefault),
-  smartSense(smartSenseDefault),
-  sensitivityRatio(sensitivityRatioDefault)
+  id(defaultId),
+  counterclockwise(defaultCounterclockwise),
+  speed(defaultSpeed),
+  deadband(defaultDeadband),
+  softStart(defaultSoftStart),
+  rawAngleFor850(-1),
+  rawAngleFor1500(-1),
+  rawAngleFor2150(-1),
+  failSafe(defaultFailSafe),
+  failSafeLimp(defaultFailSafeLimp),
+  overloadProtection(defaultOverloadProtection),
+  smartSense(defaultSmartSense),
+  sensitivityRatio(defaultSensitivityRatio)
 { }
 
-int16_t HitecDServoConfig::leftPoint14BitDefault(int modelNumber) {
+int16_t HitecDServoConfig::defaultRawAngleFor850(int modelNumber) {
   switch (modelNumber) {
     case 485: return 3381;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::centerPoint14BitDefault(int modelNumber) {
+int16_t HitecDServoConfig::defaultRawAngleFor1500(int modelNumber) {
   switch (modelNumber) {
     case 485: return 8192;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::rightPoint14BitDefault(int modelNumber) {
+int16_t HitecDServoConfig::defaultRawAngleFor2150(int modelNumber) {
   switch (modelNumber) {
     case 485: return 13002;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::leftPoint14BitFullRange(int modelNumber) {
-  int16_t c = centerPoint14BitDefault(modelNumber);
-  int16_t l = leftPoint14BitDefault(modelNumber);
-  if (c == -1 || l == -1) {
-    return -1;
-  }
-  return c + (
-    (l - c)
-    * degreesFullRange(modelNumber)
-    / degreesDefault(modelNumber)
-  );
-}
-
-int16_t HitecDServoConfig::rightPoint14BitFullRange(int modelNumber) {
-  int16_t c = centerPoint14BitDefault(modelNumber);
-  int16_t r = rightPoint14BitDefault(modelNumber);
-  if (c == -1 || r == -1) {
-    return -1;
-  }
-  return c + (
-    (r - c)
-    * degreesFullRange(modelNumber)
-    / degreesDefault(modelNumber)
-  );
-}
-
-float HitecDServoConfig::degreesDefault(int modelNumber) {
+int16_t HitecDServoConfig::minSafeRawAngle(int modelNumber) {
   switch (modelNumber) {
-    case 485: return 127.5;
+    /* I measured 731, and added +50 as a margin of error */
+    case 485: return 731 + 50;
     default: return -1;
   }
 }
 
-float HitecDServoConfig::degreesFullRange(int modelNumber) {
-  switch (modelNumber) {
-    case 485: return 185;
-    default: return -1;
+int16_t HitecDServoConfig::maxSafeRawAngle(int modelNumber) {
+  int16_t min = minSafeRawAngle(modelNumber);
+  if (min == -1) {
+    return -1;
   }
+  return 0x3FFF - min;
 }
 
 HitecDServo::HitecDServo() : pin(-1) { }
 
-void HitecDServo::attach(int _pin) {
+int HitecDServo::attach(int _pin) {
+  if (attached()) {
+    detach();
+  }
+
   pin = _pin;
   pinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);
@@ -109,7 +89,34 @@ void HitecDServo::attach(int _pin) {
   pinInputRegister = portInputRegister(port);
   pinOutputRegister = portOutputRegister(port);
 
-  leftPoint14Bit = centerPoint14Bit = rightPoint14Bit = -1;
+  int res;
+  uint16_t temp;
+
+  if ((res = readRawRegister(0x00, &temp)) != HITECD_OK) {
+    detach();
+    return res;
+  }
+  modelNumber = temp;
+
+  if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
+    detach();
+    return res;
+  }
+  rawAngleFor850 = temp;
+
+  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+    detach();
+    return res;
+  }
+  rawAngleFor1500 = temp;
+
+  if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
+    detach();
+    return res;
+  }
+  rawAngleFor2150 = temp;
+
+  return HITECD_OK;
 }
 
 bool HitecDServo::attached() {
@@ -120,37 +127,41 @@ void HitecDServo::detach() {
   pin = -1;
 }
 
-void HitecDServo::writeTargetPointQuarterMicros(int16_t quarter_micros) {
+void HitecDServo::writeTargetQuarterMicros(int16_t quarterMicros) {
   if (!attached()) {
     return;
   }
-  writeRawRegister(0x1E, quarter_micros - 3000);
+
+  quarterMicros = constrain(quarterMicros, 4*850, 4*2150);
+  writeRawRegister(0x1E, quarterMicros - 3000);
 }
 
-int16_t HitecDServo::readActualPoint14Bit() {
+int16_t HitecDServo::readCurrentRawAngle() {
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
   }
 
   int res;
-  uint16_t actualPoint;
-  if ((res = readRawRegister(0x0C, &actualPoint)) != HITECD_OK) {
+  uint16_t currentRawAngle;
+  if ((res = readRawRegister(0x0C, &currentRawAngle)) != HITECD_OK) {
     return res;
   }
-  return actualPoint;
+  return currentRawAngle;
 }
 
-int HitecDServo::readModelNumber() {
-  if (!attached()) {
-    return HITECD_ERR_NOT_ATTACHED;
+int16_t HitecDServo::readCurrentQuarterMicros() {
+  int16_t currentRawAngle = readCurrentRawAngle();
+  if (currentRawAngle < 0) {
+    return currentRawAngle;
   }
 
-  int res;
-  uint16_t modelNumber;
-  if ((res = readRawRegister(0x00, &modelNumber)) != HITECD_OK) {
-    return res;
+  if (currentRawAngle < rawAngleFor1500) {
+    return map(currentRawAngle,
+      rawAngleFor850, rawAngleFor1500, 4*850, 4*1500);
+  } else {
+    return map(currentRawAngle,
+      rawAngleFor1500, rawAngleFor2150, 4*1500, 4*2150);
   }
-  return modelNumber;
 }
 
 int HitecDServo::readConfig(HitecDServoConfig *configOut) {
@@ -233,19 +244,19 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
     return HITECD_ERR_CORRUPT;
   }
 
-  /* Read leftPoint14Bit, centerPoint14Bit, rightPoint14Bit */
+  /* Read rawAngleFor850, rawAngleFor1500, rawAngleFor2150 */
   if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->leftPoint14Bit = leftPoint14Bit = temp;
+  configOut->rawAngleFor850 = rawAngleFor850 = temp;
   if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->centerPoint14Bit = centerPoint14Bit = temp;
+  configOut->rawAngleFor1500 = rawAngleFor1500 = temp;
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->rightPoint14Bit = rightPoint14Bit = temp;
+  configOut->rawAngleFor2150 = rawAngleFor2150 = temp;
 
   /* Read failSafe and failSafeLimp. (A single register controls both.) */
   if ((res = readRawRegister(0x4C, &temp)) != HITECD_OK) {
@@ -331,12 +342,8 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
     return HITECD_ERR_NOT_ATTACHED;
   }
 
-  int modelNum = readModelNumber();
-  if (modelNum < 0) {
-    return modelNum;
-  }
   if (!bypassModelNumberCheck) {
-    switch (modelNum) {
+    switch (modelNumber) {
       case 485: break;
       default: return HITECD_ERR_UNSUPPORTED_MODEL;
     }
@@ -353,7 +360,7 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
   writeRawRegister(0x9A, 0x0003);
 
   /* Write id */
-  if (config.id != HitecDServoConfig::idDefault) {
+  if (config.id != HitecDServoConfig::defaultId) {
     writeRawRegister(0x32, config.id);
   }
 
@@ -363,12 +370,12 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
   }
 
   /* Write speed */
-  if (config.speed != HitecDServoConfig::speedDefault) {
+  if (config.speed != HitecDServoConfig::defaultSpeed) {
     writeRawRegister(0x54, config.speed / 5);
   }
 
   /* Write deadband */
-  if (config.deadband != HitecDServoConfig::deadbandDefault) {
+  if (config.deadband != HitecDServoConfig::defaultDeadband) {
     /* The DPC-11 always writes this register to the this constant whenever it
     changes the deadband. I'm not sure why, but we do the same to be safe. */
     writeRawRegister(0x72, 0x4E54);
@@ -381,7 +388,7 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
   }
 
   /* Write softStart */
-  if (config.softStart != HitecDServoConfig::softStartDefault) {
+  if (config.softStart != HitecDServoConfig::defaultSoftStart) {
     /* Note, we omit the softStart=20 case because it's the factory default. */
     if (config.softStart == 40) {
       writeRawRegister(0x60, 0x0003);
@@ -394,50 +401,54 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
     }
   }
 
-  /* Write leftPoint14Bit, centerPoint14Bit, and rightPoint14Bit. Also, record the values in
-  instance variables for readActualPointMicros() to use. (If we're using the
-  default values, then read them back into instance variables.) */
-  if (config.leftPoint14Bit != -1 &&
-      config.leftPoint14Bit != HitecDServoConfig::leftPoint14BitDefault(modelNum)) {
-    writeRawRegister(0xB2, config.leftPoint14Bit);
-    leftPoint14Bit = config.leftPoint14Bit;
+  /* Write rawAngleFor850, rawAngleFor1500, and rawAngleFor2150. Also, update
+  the instance variables that we initialized in attach(). (If we're using the
+  default values, then read them back into instance variables, so we have the
+  correct default values.) */
+  if (config.rawAngleFor850 != -1 &&
+      config.rawAngleFor850 !=
+        HitecDServoConfig::defaultRawAngleFor850(modelNumber)) {
+    writeRawRegister(0xB2, config.rawAngleFor850);
+    rawAngleFor850 = config.rawAngleFor850;
   } else {
     if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
       return res;
     }
-    leftPoint14Bit = temp;
+    rawAngleFor850 = temp;
   }
-  if (config.centerPoint14Bit != -1 &&
-      config.centerPoint14Bit != HitecDServoConfig::centerPoint14BitDefault(modelNum)) {
-    writeRawRegister(0xC2, config.centerPoint14Bit);
-    centerPoint14Bit = config.centerPoint14Bit;
+  if (config.rawAngleFor1500 != -1 &&
+      config.rawAngleFor1500 !=
+        HitecDServoConfig::defaultRawAngleFor1500(modelNumber)) {
+    writeRawRegister(0xC2, config.rawAngleFor1500);
+    rawAngleFor1500 = config.rawAngleFor1500;
   } else {
     if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
       return res;
     }
-    centerPoint14Bit = temp;
+    rawAngleFor1500 = temp;
   }
-  if (config.rightPoint14Bit != -1 &&
-      config.rightPoint14Bit != HitecDServoConfig::rightPoint14BitDefault(modelNum)) {
-    writeRawRegister(0xB0, config.rightPoint14Bit);
-    rightPoint14Bit = config.rightPoint14Bit;
+  if (config.rawAngleFor2150 != -1 &&
+      config.rawAngleFor2150 !=
+        HitecDServoConfig::defaultRawAngleFor2150(modelNumber)) {
+    writeRawRegister(0xB0, config.rawAngleFor2150);
+    rawAngleFor2150 = config.rawAngleFor2150;
   } else {
      if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
       return res;
     }
-    rightPoint14Bit = temp;
+    rawAngleFor2150 = temp;
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */
-  if (config.failSafe != HitecDServoConfig::failSafeDefault) {
+  if (config.failSafe != HitecDServoConfig::defaultFailSafe) {
     writeRawRegister(0x4C, config.failSafe);
-  } else if (config.failSafeLimp != HitecDServoConfig::failSafeLimpDefault) {
+  } else if (config.failSafeLimp != HitecDServoConfig::defaultFailSafeLimp) {
     writeRawRegister(0x4C, 0x0000);
   }
 
   /* Write overloadProtection */
   if (config.overloadProtection !=
-      HitecDServoConfig::overloadProtectionDefault) {
+      HitecDServoConfig::defaultOverloadProtection) {
     writeRawRegister(0x9C, config.overloadProtection);
   }
 
@@ -462,7 +473,7 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
   }
 
   /* Write sensitivityRatio */
-  if (config.sensitivityRatio != HitecDServoConfig::sensitivityRatioDefault) {
+  if (config.sensitivityRatio != HitecDServoConfig::defaultSensitivityRatio) {
     writeRawRegister(0x64, config.sensitivityRatio);
   }
 

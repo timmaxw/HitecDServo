@@ -5,8 +5,6 @@ The programmer and the servo communicate via a half-duplex serial connection at 
 - When the programmer is transmitting, it drives the line low (0V) or high (about 2V).
 - When the servo is transmitting, the programmer weakly pulls the line high (about 2V) and the servo drives it low (0V) to transmit. See "Read" below.
 
-If the servo receives a serial command, it will disregard any subsequent PWM pulses it receives, until it's reset by cycling the power or writing register 0x46 (see below). However, the reverse is not true; if the servo receives PWM pulses, followed by a serial command, it will respect the serial command as normal.
-
 ## Write
 - Programmer sends bytes `0x96 0x00 reg 0x02 low high checksum`, where `checksum = (0x02+reg+0x02+low+high) & 0xFF`.
 - No response from servo.
@@ -19,6 +17,13 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 - After the servo completes its transmission, it stops driving the line low, allowing the programmer to pull it high. It stays this way until 16ms after the programmer originally began pulling the line high.
 - Then the programmer starts driving the line low again, and the read is over.
 - Note, all valid registers are even-numbered. Attempting to read an odd-numbered register gives 0xLLHH, where 0xHH is the high byte of the previous register, and 0xLL is the low byte of the next register. (Attempting to read 0xFF returns 0x0000, even though 0x00 has a non-zero low byte.)
+
+## PWM behavior
+Of course, the servo also accepts PWM signals as normal.
+
+Pulses shorter than 850us or longer than 2350us are ignored. It's odd that the upper limit is 2350us; since the lower limit is 850us, and the center is 1500us, one would expect the upper limit to be 2150us. Also, the servo's "EPA right point" is the point where it will go if it receives a 2150us pulse. Nevertheless, the servo will accept pulses up to 2350us, and will move past the "EPA right point".
+
+If the servo receives a serial command, it will disregard any subsequent PWM pulses it receives, until it's reset by cycling the power or writing register 0x46 (see below). However, the reverse is not true; if the servo receives PWM pulses, followed by a serial command, it will respect the serial command as normal.
 
 # Registers
 ## Register 0x22: Unknown

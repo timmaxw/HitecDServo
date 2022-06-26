@@ -15,7 +15,7 @@ const char *hitecdErrToString(int err);
 struct HitecDServoConfig {
   /* The default constructor initializes the settings to factory-default values.
 
-  `leftPoint14Bit`, `centerPoint14Bit`, and `rightPoint14Bit` will be set to -1; this isn't the
+  `rawAngleFor850`, `rawAngleFor1500`, and `rawAngleFor2150` will be set to -1; this isn't the
   factory-default value, but it will cause `writeConfig()` to keep the factory-
   default value. */
   HitecDServoConfig();
@@ -23,28 +23,28 @@ struct HitecDServoConfig {
   /* `id` is an arbitrary number from 0 to 254. Intended for keeping track of
   multiple servos. No effect on servo behavior. */
   uint8_t id;
-  static const uint8_t idDefault = 0;
+  static const uint8_t defaultId = 0;
 
   /* `counterclockwise=false` if increasing pulse widths make the servo turn
   clockwise. `counterclockwise=true` if increasing pulse widths make the servo
   turn counterclockwise.
   
   Note: Switching the servo direction will invert the meaning of the
-  `leftPoint14Bit`, `rightPoint14Bit`, and `centerPoint14Bit` settings. If
+  `rawAngleFor850`, `rawAngleFor2150`, and `rawAngleFor1500` settings. If
   you've changed those settings to non-default values, you can use the following
   formulas to convert between the clockwise values and equivalent
   counterclockwise values:
-    ccwSettings.leftPoint14Bit   = 16383 - cwSettings.rightPoint14Bit;
-    ccwSettings.centerPoint14Bit = 16383 - cwSettings.centerPoint14Bit;
-    ccwSettings.rightPoint14Bit  = 16383 - cwSettings.leftPoint14Bit;
+    ccwSettings.rawAngleFor850   = 16383 - cwSettings.rawAngleFor2150;
+    ccwSettings.rawAngleFor1500 = 16383 - cwSettings.rawAngleFor1500;
+    ccwSettings.rawAngleFor2150  = 16383 - cwSettings.rawAngleFor850;
   */
   bool counterclockwise;
-  static const bool counterclockwiseDefault = false;
+  static const bool defaultCounterclockwise = false;
 
   /* `speed` defines how fast the servo moves to a new position, as a percentage
   of maximum speed. Legal values are 10, 20, 30, 40, 50, 60, 70, 80, 90, 100. */
   int8_t speed;
-  static const int8_t speedDefault = 100;
+  static const int8_t defaultSpeed = 100;
 
   /* `deadband` defines the servo deadband width. Small values make the servo
   more precise, but it may jitter; or if multiple servos are physically
@@ -52,7 +52,7 @@ struct HitecDServoConfig {
   more stable, but it will not react to small adjustments. Legal values are
   1 (most precise), 2, 3, 4, 5, 6, 7, 8, 9, 10 (least jitter). */
   int8_t deadband;
-  static const int8_t deadbandDefault = 1;
+  static const int8_t defaultDeadband = 1;
 
   /* `softStart` limits how fast the servo moves when power is first applied.
   If the servo is at the wrong position when power is first applied, soft start
@@ -60,46 +60,36 @@ struct HitecDServoConfig {
   normal operation. Legal values are 20, 40, 60, 80, 100. Setting
   `softStart=100` means the servo starts at full power immediately. */
   int8_t softStart;
-  static const int8_t softStartDefault = 20;
+  static const int8_t defaultSoftStart = 20;
 
-  /* `leftPoint14Bit`, `centerPoint14Bit` and `rightPoint14Bit` define how servo
+  /* `rawAngleFor850`, `rawAngleFor1500` and `rawAngleFor2150` define how servo
   pulse widths are related to physical servo positions:
-  - `leftPoint14Bit` defines the position that corresponds to a 850us pulse
-  - `centerPoint14Bit` defines the position that corresponds to a 1500us pulse
-  - `rightPoint14Bit` defines the position that corresponds to a 2150us pulse
+  - `rawAngleFor850` defines the position that corresponds to a 850us pulse
+  - `rawAngleFor1500` defines the position that corresponds to a 1500us pulse
+  - `rawAngleFor2150` defines the position that corresponds to a 2150us pulse
 
-  The positions are defined by numbers ranging from 0 to 16383 (the largest
-  number that fits into 14 bits, hence the name). If `counterclockwise=false`,
-  higher numbers are clockwise. But if `counterclockwise=true`, higher numbers
-  are counterclockwise; this means that `leftPoint14Bit < centerPoint14Bit <
-  rightPoint14Bit`, even though this makes the "left" point clockwise of center,
-  and the "right" point counterclockwise of center.
+  Raw angles are defined by numbers ranging from 0 to 16383 (=2**14-1). If
+  `counterclockwise=false`, higher numbers are clockwise. But if
+  `counterclockwise=true`, higher numbers are counterclockwise. This means that
+  `rawAngleFor850 < rawAngleFor1500 < rawAngleFor2150` regardless of the value
+  of `counterclockwise`.
 
   If you call writeConfig() with these values set to -1, then the
   factory-default values will be kept. */
-  int16_t leftPoint14Bit, centerPoint14Bit, rightPoint14Bit;
+  int16_t rawAngleFor850, rawAngleFor1500, rawAngleFor2150;
 
-  /* Convenience functions to return the factory-default values of `leftPoint14Bit`,
-  `rightPoint14Bit`, and `centerPoint14Bit` for the given servo model. Right now this only
-  works for the D485HW; other models will return -1. */
-  static int16_t leftPoint14BitDefault(int modelNumber);
-  static int16_t centerPoint14BitDefault(int modelNumber);
-  static int16_t rightPoint14BitDefault(int modelNumber);
+  /* Convenience functions to return the factory-default raw angles for the
+  given servo model. Right now this only works for the D485HW; other models will
+  return -1. */
+  static int16_t defaultRawAngleFor850(int modelNumber);
+  static int16_t defaultRawAngleFor1500(int modelNumber);
+  static int16_t defaultRawAngleFor2150(int modelNumber);
 
-  /* The factory-default values usually produce a narrower movement range than
-  the servo is physically capable of (e.g. for the D485HW, the factory-default
-  values produce a 147 degree range, but the servo can actually do 201 degrees.)
-  To access the full range of motion, set
-    leftPoint14Bit = leftPoint14BitFullRange(model)
-    rightPoint14Bit = rightPoint14BitFullRange(model)
-  (Right now this only works for the D485HW; other models will return -1.) */
-  static int16_t leftPoint14BitFullRange(int modelNumber);
-  static int16_t rightPoint14BitFullRange(int modelNumber);
-
-  /* Degrees of motion corresponding to the default and full-range values listed
-  above. */
-  static float degreesDefault(int modelNumber);
-  static float degreesFullRange(int modelNumber);
+  /* Convenience functions to return the min/max raw angles that the servo
+  can be safely driven to without hitting physical stops. (This may vary
+  slightly from servo to servo; these are conservative values.) */
+  static int16_t minSafeRawAngle(int modelNumber);
+  static int16_t maxSafeRawAngle(int modelNumber);
 
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
@@ -107,8 +97,8 @@ struct HitecDServoConfig {
   the servo will hold its previous position (this is the default). */
   int16_t failSafe;
   bool failSafeLimp;
-  static const int16_t failSafeDefault = 0;
-  static const bool failSafeLimpDefault = false;
+  static const int16_t defaultFailSafe = 0;
+  static const bool defaultFailSafeLimp = false;
 
   /* If the servo is overloaded or stalled, then it will automatically reduce
   power by `overloadProtection` percent to prevent damage. Legal values are:
@@ -120,34 +110,35 @@ struct HitecDServoConfig {
   - 50 (reduce power by 50%, so 50% of max power)
   TODO why is 100 no overload protection, not 0*/
   int8_t overloadProtection;
-  static const int8_t overloadProtectionDefault = 100;
+  static const int8_t defaultOverloadProtection = 100;
 
   /* `smartSense` is a Hitec proprietary feature that "allows the servo to
   analyse operational feed back and automatically make on the fly parameter
   adjustments to optimize performance". */
   bool smartSense;
-  static const bool smartSenseDefault = true;
+  static const bool defaultSmartSense = true;
 
   /* `sensitivityRatio` ranges from 819 to 4095. Higher values will make the
   servo react faster to changes in input, but it may jitter more. Lower values
   will make the servo more stable, but it may feel sluggish. If
   `smartSense=true`, then `sensitivityRatio` is ignored. */
   int16_t sensitivityRatio;
-  static const int16_t sensitivityRatioDefault = 4095;
+  static const int16_t defaultSensitivityRatio = 4095;
 };
 
 class HitecDServo {
 public:
   HitecDServo();
 
-  void attach(int pin);
+  int attach(int pin);
   bool attached();
   void detach();
 
-  void writeTargetPointQuarterMicros(int16_t quarter_micros);
-  int16_t readActualPoint14Bit();
+  void writeTargetQuarterMicros(int16_t quarterMicros);
 
-  int readModelNumber();
+  int16_t readCurrentRawAngle();
+  int16_t readCurrentQuarterMicros();
+
   int readConfig(HitecDServoConfig *config_out);
 
   /* Resets the servo to its factory-default configuration, then uploads the
@@ -178,7 +169,8 @@ private:
   uint8_t pinBitMask;
   volatile uint8_t *pinInputRegister, *pinOutputRegister;
 
-  int16_t leftPoint14Bit, centerPoint14Bit, rightPoint14Bit;
+  int modelNumber;
+  int16_t rawAngleFor850, rawAngleFor1500, rawAngleFor2150;
 };
 
 #endif /* HitecDServo_h */
