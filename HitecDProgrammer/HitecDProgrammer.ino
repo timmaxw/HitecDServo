@@ -277,6 +277,7 @@ void printConfig() {
 void writeConfig() {
   Serial.println(F("Changing servo config..."));
   int res;
+  /* TODO: something about overriding the unsupported-model check */
   if ((res = servo.writeConfig(config)) != HITECD_OK) {
     printErr(res, false);
     /* Something went wrong. To avoid being stuck in an incorrect state, re-read
@@ -322,7 +323,7 @@ void changeDirectionSetting() {
   }
 
   Serial.println(F(
-    "Enter 'Clockwise' or 'Counterclockwise' (or nothing to cancel):"));
+    "Enter \"Clockwise\" or \"Counterclockwise\" (or nothing to cancel):"));
   scanRawInput();
   bool newCounterclockwise;
   if (parseWord("Clockwise")) {
@@ -442,7 +443,7 @@ void changeFailSafeSetting() {
   }
 
   Serial.println(F(
-    "Enter new fail safe point in microseconds; or 'Off' or 'Limp' (or\r\n"
+    "Enter new fail safe point in microseconds; or \"Off\" or \"Limp\" (or\r\n"
     "nothing to cancel):"));
   scanRawInput();
   int16_t newFailSafe;
@@ -486,7 +487,7 @@ void changeOverloadProtectionSetting() {
   }
 
   Serial.println(F(
-    "Enter new overload protection from 10, 20, ... 50; or 'Off' (or\r\n"
+    "Enter new overload protection from 10, 20, ... 50; or \"Off\" (or\r\n"
     "nothing to cancel):"));
   scanRawInput();
   int16_t newOverloadProtection;
@@ -522,7 +523,7 @@ void changeSmartSenseSetting() {
     Serial.println(F("Off (default is On)"));
   }
 
-  Serial.println(F("Enter 'On' or 'Off' (or nothing to cancel):"));
+  Serial.println(F("Enter \"On\" or \"Off\" (or nothing to cancel):"));
   scanRawInput();
   bool newSmartSense;
   if (parseWord("On")) {
@@ -532,7 +533,7 @@ void changeSmartSenseSetting() {
   } else if (rawInputLen == 0) {
     goto cancel;
   } else {
-    Serial.println(F("Error: You did not enter 'On' or 'Off'."));
+    Serial.println(F("Error: You did not enter \"On\" or \"Off\"."));
     goto cancel;
   }
   if (newSmartSense == config.smartSense) {
@@ -671,9 +672,7 @@ void loop() {
   } else if (parseWord("help")) {
     printHelp();
   } else {
-    Serial.print(F("Error: '"));
-    Serial.write(rawInput, rawInputLen);
-    Serial.println(F("' is not an available command."));
+    Serial.print(F("Error: What you entered is not a valid command."));
     printHelp();
   }
 }

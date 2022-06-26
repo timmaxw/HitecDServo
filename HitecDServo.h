@@ -38,6 +38,7 @@ can print this with Serial for debugging purposes. For example:
 */
 const char *hitecdErrToString(int err);
 
+/* TODO: rename config to settings? */
 struct HitecDServoConfig {
   /* The default constructor initializes the settings to factory-default values.
 
