@@ -100,15 +100,18 @@ struct HitecDServoConfig {
   static const int16_t defaultFailSafe = 0;
   static const bool defaultFailSafeLimp = false;
 
-  /* If the servo is overloaded or stalled, then it will automatically reduce
-  power by `overloadProtection` percent to prevent damage. Legal values are:
+  /* If the servo is overloaded or stalled for more than about 3 seconds, then
+  it will automatically reduce power to `overloadProtection` percent to prevent
+  damage. Legal values are:
   - 100 (no overload protection; the default)
-  - 10 (reduce power by 10%, so 90% of max power)
-  - 20 (reduce power by 20%, so 80% of max power)
-  - 30 (reduce power by 30%, so 70% of max power)
-  - 40 (reduce power by 40%, so 60% of max power)
-  - 50 (reduce power by 50%, so 50% of max power)
-  TODO why is 100 no overload protection, not 0*/
+  - 10 (reduce power to 10% of max power)
+  - 20 (reduce power to 20% of max power)
+  - 30 (reduce power to 30% of max power)
+  - 40 (reduce power to 40% of max power)
+  - 50 (reduce power to 50% of max power)
+  (Note, the DPC-11 manual claims that the X% setting will reduce power _by_ X%.
+  I think this is an error; in my tests, the X% setting appears to reduce power
+  _to_ X%.) */
   int8_t overloadProtection;
   static const int8_t defaultOverloadProtection = 100;
 
@@ -172,7 +175,7 @@ public:
   /* Directly read/write registers on the servo. Don't use this unless you know
   what you're doing. (The only reason these methods are declared public is so
   that tests, etc. can access them.) */
-  int readRawRegister(uint8_t reg, uint16_t *val_out);
+  int readRawRegister(uint8_t reg, uint16_t *valOut);
   void writeRawRegister(uint8_t reg, uint16_t val);
 
 private:
