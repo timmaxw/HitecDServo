@@ -26,14 +26,8 @@ Pulses shorter than 850us or longer than 2350us are ignored. It's odd that the u
 If the servo receives a serial command, it will disregard any subsequent PWM pulses it receives, until it's reset by cycling the power or writing register 0x46 (see below). However, the reverse is not true; if the servo receives PWM pulses, followed by a serial command, it will respect the serial command as normal.
 
 # Registers
-## Register 0x22: Unknown
-- Written 0x1000 after any operation that changes EPA points or servo direction. (Note about convention: 0x1000 means `low=0x00` and `high=0x10`.)
-- Also written 0x1000 on initial connection, and after changing servo ID. (Not sure why!)
-- When read back, always returns 0x07D0.
-- No apparent effect.
-
 ## Register 0x06: Unknown
-- Read at startup, returns 0x4ABF.
+- Read at startup, returns 0x4ABF. (Note about convention: 0x4ABF means low=0xBF and high=0x4A.)
 
 ## Register 0x00: Model number
 - Read (twice) at startup, returns 0x01E5. In decimal this is 485, and the servo is model D485.
@@ -141,12 +135,13 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 - About 1.6ms after the end of the write to 0x46 (2.2ms after the start of the write) the servo suddenly draws a lot of current for a few microseconds. The current drawn is more than when the servo moves normally, but more a much shorter period. This causes the supply voltage to dip. At the same time, the data line briefly glitches up to a few hundred millivolts above ground. Because the serial connection uses inverted polarity, a UART listening to the data line may interpret this glitch as an 0xFF byte.
 
 ## Register 0x9C: Overload protection
-- 0x000A means 10% overload protection
-- 0x0014 means 20% overload protection
-- 0x001E means 30% overload protection
-- 0x0028 means 40% overload protection
-- 0x0032 means 50% overload protection
-- 0x0064 means overload protection off (default)
+- If the servo is overloaded for more than 3 seconds, overload protection reduces motor power to a percentage of the max power.
+- 0x000A means reduce power to 10% of max
+- 0x0014 means reduce power to 20% of max
+- 0x001E means reduce power to 30% of max
+- 0x0028 means reduce power to 40% of max
+- 0x0032 means reduce power to 50% of max
+- 0x0064 means do not reduce power; overload protection disabled (default)
 
 ## Register 0x98: Related to overload protection
 - Written to 0x00C8 every time overload protection is changed
@@ -165,7 +160,7 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 - These are the values displayed in red text in EPA settings mode.
 - DPC-11 GUI "manual setting" mode has inconsistent behavior: When dragging the slider, it will use `0x0BC2 + 4 * (microseconds - 1500)` rather than `0x0BB8 + 4 * (microseconds - 1500)`. However, the buttons labeled "1500", "1000", "2000", etc. will use the 0x0BB8 formula.
 - Approximately 1-3ms after end of the write to 0x1E, the servo begins to actually move. When the motor turns on, the supply voltage dips modestly, but not enough to cause a glitch on the data line.
-- Cannot be read back.
+- Returns different values when read back (returned values seem similar to 0x0C)
 
 ## Register 0x0C: Read physical servo position
 - Read-only register that appears to return actual physical servo position
@@ -198,9 +193,17 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 ## Register 0x52: Unknown
 - When starting EPA settings mode, write 0x0000
 
-## Register 0x56: Unknown
-- When starting EPA settings mode, write 0x0190
-- On EPA reset, write 0x0FFF (immediately after writing 0x0FFF to 0x54)
+## Register 0x56: Power limit setting
+- Defines the maximum amount of power the servo will use. Ranges from 0x0000 to 0x07D0. Any value larger than 0x07D0 will be treated as equivalent to 0x07D0.
+- When starting EPA settings mode, write 0x0190 (20% power)
+- On EPA reset, write 0x0FFF (max power)
+
+## Register 0x22: Actual power limit (after overload protection)
+- Returns the actual power limit the servo is using. Ranges from 0x0000 to 0x07D0.
+- In normal operation, returns the same value as 0x56 (but capped to 0x07D0).
+- If overload protection kicks in, returns the effective power limit after overload protection. (E.g. if 0x56 is set to 0x0400 and overload protection is set to 50%, then when overload protection kicks in, 0x22 will read 0x0200.)
+- Written 0x1000 after any operation that changes EPA points or servo direction. However, writing to 0x22 doesn't seem to have any effect.
+- Also written 0x1000 on initial connection, and after changing servo ID. (Not sure why!)
 
 ## Register 0x6E: Reset to factory settings
 - Written to 0x0F0F on program reset
@@ -234,6 +237,9 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 
 ## Register 0xFC: Unknown
 - Cycles from 0x0000->0x0001->...->0x0004->0x0000 with a period of about 1 second.
+
+## Register 0x10: Unknown
+- Signed integer.
 
 # Procedures
 ## Initial connection

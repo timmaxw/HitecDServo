@@ -502,7 +502,8 @@ cancel:
 }
 
 void resetSettingsToFactoryDefaults() {
-  /* Print a copy of the servo config, in case the user changes their mind */
+  /* Print a copy of the servo config, so the user has a backup copy of the
+  previous config if they change their mind after resetting it. */
   printConfig();
 
   Serial.println(F(
