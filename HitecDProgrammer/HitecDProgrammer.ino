@@ -2,7 +2,7 @@
 
 HitecDServo servo;
 int modelNumber;
-HitecDServoConfig servoConfig;
+HitecDServoConfig config;
 
 void printErr(int res, bool needReset) {
   if (res == HITECD_OK) {
@@ -109,79 +109,90 @@ void scanRawInput() {
   }
 
   if (rawInputLen > 0) {
-    Serial.print(F("You entered: "));
+    Serial.print(F("You entered: \""));
     Serial.write(rawInput, rawInputLen);
-    Serial.println();
+    Serial.println('\"');
   } else {
     Serial.println(F("You entered nothing."));
   }
 }
 
-int16_t scanNumber(bool allowEmptyAsNegativeOne, bool quarters=false) {
-  while (true) {
-    scanRawInput();
-
-    if (rawInputLen == 0) {
-      if (allowEmptyAsNegativeOne) {
-        return -1;
-      } else {
-        Serial.println(F("Error: Input was empty. Please try again:"));
-        continue;
-      }
+#define PRINT_IF_EMPTY (1 << 1)
+#define QUARTERS (1 << 2)
+bool parseNumber(int16_t *valOut, int flags = 0) {
+  if (rawInputLen == 0) {
+    if (flags & PRINT_IF_EMPTY) {
+      Serial.println(F("Error: Input was empty."));
     }
-
-    bool negative = (rawInput[0] == '-');
-    int i = (negative ? 1 : 0);
-    if (rawInputLen == i) {
-      Serial.println(F("Error: Invalid input. Please try again:"));
-      continue;
-    }
-
-    int16_t number = 0;
-    while (i < rawInputLen && rawInput[i] >= '0' && rawInput[i] <= '9') {
-      number = number * 10 + (rawInput[i] - '0');
-      ++i;
-    }
-
-    if (quarters) {
-      /* In "quarters" mode, we allow numbers to end in .0, .25, .5, .75; the
-      value we return is multiplied by 4. (We don't support floating point in
-      general.) */
-      number *= 4;
-      if (i < rawInputLen && rawInput[i] == '.') {
-        ++i;
-        if (i < rawInputLen && rawInput[i] == '0') {
-          i += 1;
-        } else if (i + 1 < rawInputLen &&
-            rawInput[i] == '2' && rawInput[i+1] == '5') {
-          number += 1;
-          i += 2;
-        } else if (i < rawInputLen && rawInput[i] == '5') {
-          number += 2;
-          i += 1;
-        } else if (i < rawInputLen &&
-            rawInput[i] == '7' && rawInput[i+1] == '5') {
-          number += 3;
-          i += 2;
-        } else {
-          Serial.println(F("Error: Invalid input. Please try again:"));
-          continue;
-        }
-        while (i < rawInputLen && rawInput[i] == '0') {
-          ++i;
-        }
-      }
-    }
-
-    if (negative) number = -number;
-
-    if (i != rawInputLen) {
-      Serial.println(F("Error: Invalid input. Please try again:"));
-      continue;
-    }
-
-    return number;
+    return false;
   }
+
+  if (rawInput[0] == '-') {
+    Serial.println(F("Error: Number must be positive."));
+    return false;
+  }
+
+  int i = 0;
+
+  *valOut = 0;
+  while (i < rawInputLen && rawInput[i] >= '0' && rawInput[i] <= '9') {
+    *valOut = *valOut * 10 + (rawInput[i] - '0');
+    ++i;
+  }
+
+  if (flags & QUARTERS) {
+    /* In "quarters" mode, we allow numbers to end in .0, .25, .5, .75; the
+    value we return is multiplied by 4. (We don't support floating point in
+    general.) */
+    *valOut *= 4;
+    if (i < rawInputLen && rawInput[i] == '.') {
+      ++i;
+      if (i < rawInputLen && rawInput[i] == '0') {
+        i += 1;
+      } else if (i + 1 < rawInputLen &&
+          rawInput[i] == '2' && rawInput[i+1] == '5') {
+        *valOut += 1;
+        i += 2;
+      } else if (i < rawInputLen && rawInput[i] == '5') {
+        *valOut += 2;
+        i += 1;
+      } else if (i < rawInputLen &&
+          rawInput[i] == '7' && rawInput[i+1] == '5') {
+        *valOut += 3;
+        i += 2;
+      } else {
+        Serial.println(F("Error: Invalid number."));
+        return false;
+      }
+      while (i < rawInputLen && rawInput[i] == '0') {
+        ++i;
+      }
+    }
+  }
+
+  if (i != rawInputLen) {
+    Serial.println(F("Error: Invalid number."));
+    return false;
+  }
+
+  return true;
+}
+bool scanNumber(int16_t *valOut, int flags = 0) {
+  scanRawInput();
+  return parseNumber(valOut, flags);
+}
+
+bool parseWord(const char *word, int flags = 0) {
+  int i;
+  for (i = 0; word[i]; ++i) {
+    if (rawInputLen <= i) {
+      return false;
+    }
+    if (tolower(word[i]) != tolower(rawInput[i])) {
+      return false;
+    }
+  }
+  return (rawInputLen == i);
 }
 
 void printValueWithDefault(int16_t value, int16_t defaultValue) {
@@ -199,94 +210,78 @@ void printConfig() {
   Serial.println(F("Servo settings:"));
 
   Serial.print(F("  ID: "));
-  printValueWithDefault(servoConfig.id,
+  printValueWithDefault(config.id,
     HitecDServoConfig::defaultId);
 
   Serial.print(F("  Direction: "));
-  if (servoConfig.counterclockwise) {
+  if (config.counterclockwise) {
     Serial.println(F("Counterclockwise (default is clockwise)"));
   } else {
     Serial.println(F("Clockwise (default)"));
   }
 
   Serial.print(F("  Speed: "));
-  printValueWithDefault(servoConfig.speed,
+  printValueWithDefault(config.speed,
     HitecDServoConfig::defaultSpeed);
 
   Serial.print(F("  Deadband: "));
-  printValueWithDefault(servoConfig.deadband,
+  printValueWithDefault(config.deadband,
     HitecDServoConfig::defaultDeadband);
 
   Serial.print(F("  Soft start: "));
-  printValueWithDefault(servoConfig.softStart,
+  printValueWithDefault(config.softStart,
     HitecDServoConfig::defaultSoftStart);
 
-  Serial.print(F("  Raw angle for 850us PWM: "));
-  printValueWithDefault(servoConfig.rawAngleFor850,
+  Serial.print(F("  Raw angle for 850us PWM (left endpoint): "));
+  printValueWithDefault(config.rawAngleFor850,
     HitecDServoConfig::defaultRawAngleFor850(modelNumber));
 
-  Serial.print(F("  Raw angle for 1500us PWM: "));
-  printValueWithDefault(servoConfig.rawAngleFor1500,
+  Serial.print(F("  Raw angle for 1500us PWM (center point): "));
+  printValueWithDefault(config.rawAngleFor1500,
     HitecDServoConfig::defaultRawAngleFor1500(modelNumber));
 
-  Serial.print(F("  Raw angle for 2150us PWM: "));
-  printValueWithDefault(servoConfig.rawAngleFor2150,
+  Serial.print(F("  Raw angle for 2150us PWM (right endpoint): "));
+  printValueWithDefault(config.rawAngleFor2150,
     HitecDServoConfig::defaultRawAngleFor2150(modelNumber));
 
   Serial.print(F("  Fail safe: "));
-  if (servoConfig.failSafe) {
-    Serial.print(servoConfig.failSafe);
+  if (config.failSafe) {
+    Serial.print(config.failSafe);
     Serial.println(F(" (default is Off)"));
-  } else if (servoConfig.failSafeLimp) {
+  } else if (config.failSafeLimp) {
     Serial.println(F("Limp (default is Off)"));
   } else {
     Serial.println(F("Off (default)"));
   }
 
   Serial.print(F("  Overload protection: "));
-  if (servoConfig.overloadProtection < 100) {
-    Serial.print(servoConfig.overloadProtection);
+  if (config.overloadProtection < 100) {
+    Serial.print(config.overloadProtection);
     Serial.println(F(" (default is Off)"));
   } else {
     Serial.println(F("Off (default)"));
   }
 
   Serial.print(F("  Smart sense: "));
-  if (servoConfig.smartSense) {
+  if (config.smartSense) {
     Serial.println(F("On (default)"));
   } else {
     Serial.println(F("Off (default is On)"));
   }
 
   Serial.print(F("  Sensitivity ratio: "));
-  printValueWithDefault(servoConfig.sensitivityRatio,
+  printValueWithDefault(config.sensitivityRatio,
     HitecDServoConfig::defaultSensitivityRatio);
-}
-
-void printHelp() {
-  Serial.println(F("Available commands:"));
-  Serial.println(F("  1 - Change ID setting"));
-  Serial.println(F("  2 - Change direction setting"));
-  Serial.println(F("  3 - Change speed setting"));
-  Serial.println(F("  4 - Change deadband setting"));
-  Serial.println(F("  5 - Change soft-start setting"));
-  Serial.println(F("  6 - Change angle neutral/endpoint settings"));
-  Serial.println(F("  7 - Change fail-safe setting"));
-  Serial.println(F("  8 - Change overload-protection setting"));
-  Serial.println(F("  9 - Change Smart Sense setting"));
-  Serial.println(F("  0 - Change sensitivity ratio setting"));
-  Serial.println(F("  V - View all servo settings"));
-  Serial.println(F("  ? - Show this list of commands again"));
 }
 
 void writeConfig() {
   Serial.println(F("Changing servo config..."));
   int res;
-  if ((res = servo.writeConfig(servoConfig)) != HITECD_OK) {
+  if ((res = servo.writeConfig(config)) != HITECD_OK) {
     printErr(res, false);
     /* Something went wrong. To avoid being stuck in an incorrect state, re-read
     the true config from the servo. */
-    if ((res = servo.readConfig(&servoConfig)) != HITECD_OK) {
+    if ((res = servo.readConfig(&config)) != HITECD_OK) {
       printErr(res, true);
     }
     return;
@@ -296,22 +291,290 @@ void writeConfig() {
 
 void changeIdSetting() {
   Serial.print(F("Current ID: "));
-  printValueWithDefault(servoConfig.id,
+  printValueWithDefault(config.id,
     HitecDServoConfig::defaultId);
-  Serial.println(F("Enter new ID (or enter nothing to cancel):"));
-  int16_t newId = scanNumber(true);
-  if (newId == -1 || newId == servoConfig.id) {
+
+  Serial.println(F("Enter new ID (or nothing to cancel):"));
+
+  int16_t newId;
+  if (!scanNumber(&newId) || newId == config.id) {
     goto cancel;
   }
-  if (newId < 0 || newId >= 255) {
-    Serial.println(F("Invalid ID."));
+  if (newId < 0 || newId > 254) {
+    Serial.println(F("Error: ID must be between 0 and 254."));
     goto cancel;
   }
-  servoConfig.id = newId;
+
+  config.id = newId;
   writeConfig();
   return;
+
 cancel:
   Serial.println(F("Current ID will be kept."));
+}
+
+void changeDirectionSetting() {
+  Serial.print(F("Current direction: "));
+  if (config.counterclockwise) {
+    Serial.println(F("Counterclockwise (default is clockwise)"));
+  } else {
+    Serial.println(F("Clockwise (default)"));
+  }
+
+  Serial.println(F(
+    "Enter 'Clockwise' or 'Counterclockwise' (or nothing to cancel):"));
+  scanRawInput();
+  bool newCounterclockwise;
+  if (parseWord("Clockwise")) {
+    newCounterclockwise = false;
+  } else if (parseWord("Counterclockwise")) {
+    newCounterclockwise = true;
+  } else if (rawInputLen == 0) {
+    goto cancel;
+  } else {
+    Serial.println(F("Error: Invalid direction."));
+    goto cancel;
+  }
+  if (newCounterclockwise == config.counterclockwise) {
+    goto cancel;
+  }
+
+  config.counterclockwise = newCounterclockwise;
+  int16_t prevRawAngleFor850 = config.rawAngleFor850;
+  int16_t prevRawAngleFor1500 = config.rawAngleFor1500;
+  int16_t prevRawAngleFor2150 = config.rawAngleFor2150;
+  config.rawAngleFor850 = 16383 - prevRawAngleFor2150;
+  config.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
+  config.rawAngleFor2150 = 16383 - prevRawAngleFor850;
+  // TODO: Print new raw angles
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current direction will be kept."));
+}
+
+void changeSpeedSetting() {
+  Serial.print(F("Current speed: "));
+  printValueWithDefault(config.speed,
+    HitecDServoConfig::defaultSpeed);
+
+  Serial.println(F(
+    "Enter new speed from 10, 20, ... 100 (or nothing to cancel):"));
+  int16_t newSpeed;
+  if (!scanNumber(&newSpeed) || newSpeed == config.speed) {
+    goto cancel;
+  }
+  if (newSpeed < 10 || newSpeed > 100 || newSpeed % 10 != 0) {
+    Serial.println(F("Error: Invalid speed."));
+    goto cancel;
+  }
+
+  config.speed = newSpeed;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current speed will be kept."));
+}
+
+void changeDeadbandSetting() {
+  Serial.print(F("Current deadband: "));
+  printValueWithDefault(config.deadband,
+    HitecDServoConfig::defaultDeadband);
+
+  Serial.println(F(
+    "Enter new deadband from 1, 2, ... 10 (or nothing to cancel):"));
+  int16_t newDeadband;
+  if (!scanNumber(&newDeadband) || newDeadband == config.deadband) {
+    goto cancel;
+  }
+  if (newDeadband < 1 || newDeadband > 10) {
+    Serial.println(F("Error: Invalid deadband."));
+    goto cancel;
+  }
+
+  config.deadband = newDeadband;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current deadband will be kept."));
+}
+
+void changeSoftStartSetting() {
+  Serial.print(F("Current soft start: "));
+  printValueWithDefault(config.softStart,
+    HitecDServoConfig::defaultSoftStart);
+
+  Serial.println(F(
+    "Enter new soft start from 20, 40, ... 100 (or nothing to cancel):"));
+  int16_t newSoftStart;
+  if (!scanNumber(&newSoftStart) || newSoftStart == config.softStart) {
+    goto cancel;
+  }
+  if (newSoftStart < 20 || newSoftStart > 100 || newSoftStart % 20 != 0) {
+    Serial.println(F("Error: Invalid soft start."));
+    goto cancel;
+  }
+
+  config.softStart = newSoftStart;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current soft start will be kept."));
+}
+
+void changeAngleSettings() {
+  Serial.println(F("Error: Angle settings not implemented yet."));
+}
+
+void changeFailSafeSetting() {
+  Serial.print(F("Current fail safe: "));
+  if (config.failSafe) {
+    Serial.print(config.failSafe);
+    Serial.println(F(" (default is Off)"));
+  } else if (config.failSafeLimp) {
+    Serial.println(F("Limp (default is Off)"));
+  } else {
+    Serial.println(F("Off (default)"));
+  }
+
+  Serial.println(F(
+    "Enter new fail safe point in microseconds; or 'Off' or 'Limp' (or\r\n"
+    "nothing to cancel):"));
+  scanRawInput();
+  int16_t newFailSafe;
+  bool newFailSafeLimp;
+  if (parseWord("Off")) {
+    newFailSafe = 0;
+    newFailSafeLimp = false;
+  } else if (parseWord("Limp")) {
+    newFailSafe = 0;
+    newFailSafeLimp = true;
+  } else if (parseNumber(&newFailSafe)) {
+    newFailSafeLimp = false;
+    if ((newFailSafe != 0 && newFailSafe < 850) || newFailSafe > 2150) {
+      Serial.println(F("Error: Fail-safe should be between 850 and 2150"));
+      goto cancel;
+    }
+  } else {
+    goto cancel;
+  }
+  if (newFailSafe == config.failSafe &&
+      newFailSafeLimp == config.failSafeLimp) {
+    goto cancel;
+  }
+
+  config.failSafe = newFailSafe;
+  config.failSafeLimp = newFailSafeLimp;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current soft start will be kept."));
+}
+
+void changeOverloadProtectionSetting() {
+  Serial.print(F("Current overload protection: "));
+  if (config.overloadProtection < 100) {
+    Serial.print(config.overloadProtection);
+    Serial.println(F(" (default is Off)"));
+  } else {
+    Serial.println(F("Off (default)"));
+  }
+
+  Serial.println(F(
+    "Enter new overload protection from 10, 20, ... 50; or 'Off' (or\r\n"
+    "nothing to cancel):"));
+  scanRawInput();
+  int16_t newOverloadProtection;
+  if (parseWord("Off")) {
+    newOverloadProtection = 100;
+  } else if (parseNumber(&newOverloadProtection)) {
+    if (newOverloadProtection < 10 ||
+        (newOverloadProtection > 50 && newOverloadProtection != 100) ||
+        newOverloadProtection % 10 != 0) {
+      Serial.println(F("Error: Invalid overload protection."));
+      goto cancel;
+    }
+  } else {
+    goto cancel;
+  }
+  if (newOverloadProtection == config.overloadProtection) {
+    goto cancel;
+  }
+
+  config.overloadProtection = newOverloadProtection;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current overload protection will be kept."));
+}
+
+void changeSmartSenseSetting() {
+  Serial.print(F("Current smart sense: "));
+  if (config.smartSense) {
+    Serial.println(F("On (default)"));
+  } else {
+    Serial.println(F("Off (default is On)"));
+  }
+
+  Serial.println(F("Enter 'On' or 'Off' (or nothing to cancel):"));
+  scanRawInput();
+  bool newSmartSense;
+  if (parseWord("On")) {
+    newSmartSense = true;
+  } else if (parseWord("Off")) {
+    newSmartSense = false;
+  } else if (rawInputLen == 0) {
+    goto cancel;
+  } else {
+    Serial.println(F("Error: You did not enter 'On' or 'Off'."));
+    goto cancel;
+  }
+  if (newSmartSense == config.smartSense) {
+    goto cancel;
+  }
+
+  config.smartSense = newSmartSense;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current smart sense will be kept."));
+}
+
+void changeSensitivityRatioSetting() {
+  Serial.print(F("Current sensitivity ratio: "));
+  printValueWithDefault(config.sensitivityRatio,
+    HitecDServoConfig::defaultSensitivityRatio);
+
+  if (config.smartSense) {
+    Serial.println(F(
+      "Warning: Sensitivity ratio has no effect if smart sense is on."));
+  }
+
+  Serial.println(F(
+    "Enter new sensitivity ratio from 819 to 4095 (or nothing to cancel):"));
+  int16_t newSensitivityRatio;
+  if (!scanNumber(&newSensitivityRatio) ||
+      newSensitivityRatio == config.sensitivityRatio) {
+    goto cancel;
+  }
+  if (newSensitivityRatio < 819 || newSensitivityRatio > 4095) {
+    Serial.println(F("Error: Invalid sensitivity ratio."));
+    goto cancel;
+  }
+
+  config.sensitivityRatio = newSensitivityRatio;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current sensitivity ratio will be kept."));
 }
 
 void setup() {
@@ -319,8 +582,10 @@ void setup() {
 
   Serial.begin(115200);
 
-  Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
-  int pin = scanNumber(false);
+  int16_t pin;
+  do {
+    Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
+  } while (!scanNumber(&pin, PRINT_IF_EMPTY));
   Serial.println(F("Connecting to servo..."));
   if ((res = servo.attach(pin)) != HITECD_OK) {
     printErr(res, true);
@@ -350,39 +615,65 @@ void setup() {
     ));
   }
 
-  if ((res = servo.readConfig(&servoConfig)) < 0) {
+  if ((res = servo.readConfig(&config)) < 0) {
     printErr(res, true);
   }
   printConfig();
 
+  Serial.println(F(
+    "===================================================================="));
   printHelp();
+}
+
+void printHelp() {
+  Serial.println(F("Available commands:"));
+  Serial.println(F("  id          - Change ID setting"));
+  Serial.println(F("  direction   - Change direction setting"));
+  Serial.println(F("  speed       - Change speed setting"));
+  Serial.println(F("  deadband    - Change deadband setting"));
+  Serial.println(F("  softstart   - Change soft-start setting"));
+  Serial.println(F("  angle       - Change angle neutral/endpoint settings"));
+  Serial.println(F("  failsafe    - Change fail-safe setting"));
+  Serial.println(F("  overload    - Change overload-protection setting"));
+  Serial.println(F("  smartsense  - Change smart sense setting"));
+  Serial.println(F("  sensitivity - Change sensitivity ratio setting"));
+  Serial.println(F("  show        - Show current servo settings"));
+  Serial.println(F("  help        - Show this list of commands again"));
 }
 
 void loop() {
   Serial.println(F(
-    "====================================================================\r\n"
-  ));
+    "===================================================================="));
   Serial.println(F("Enter a command:"));
   scanRawInput();
-  if (rawInputLen != 1) {
-    Serial.println(F("Error: Commands should be a single character."));
-    return;
-  }
-  switch (rawInput[0]) {
-  case '1':
+  if (parseWord("id")) {
     changeIdSetting();
-    break;
-  case 'V':
+  } else if (parseWord("direction")) {
+    changeDirectionSetting();
+  } else if (parseWord("speed")) {
+    changeSpeedSetting();
+  } else if (parseWord("deadband")) {
+    changeDeadbandSetting();
+  } else if (parseWord("softstart")) {
+    changeSoftStartSetting();
+  } else if (parseWord("angle")) {
+    changeAngleSettings();
+  } else if (parseWord("failsafe")) {
+    changeFailSafeSetting();
+  } else if (parseWord("overload")) {
+    changeOverloadProtectionSetting();
+  } else if (parseWord("smartsense")) {
+    changeSmartSenseSetting();
+  } else if (parseWord("sensitivity")) {
+    changeSensitivityRatioSetting();
+  } else if (parseWord("show")) {
     printConfig();
-    break;
-  case '?':
+  } else if (parseWord("help")) {
     printHelp();
-    break;
-  default:
+  } else {
     Serial.print(F("Error: '"));
-    Serial.print(rawInput[0]);
+    Serial.write(rawInput, rawInputLen);
     Serial.println(F("' is not an available command."));
     printHelp();
-    break;
   }
 }

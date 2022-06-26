@@ -60,9 +60,9 @@ struct HitecDServoConfig {
   you've changed those settings to non-default values, you can use the following
   formulas to convert between the clockwise values and equivalent
   counterclockwise values:
-    ccwSettings.rawAngleFor850   = 16383 - cwSettings.rawAngleFor2150;
-    ccwSettings.rawAngleFor1500 = 16383 - cwSettings.rawAngleFor1500;
-    ccwSettings.rawAngleFor2150  = 16383 - cwSettings.rawAngleFor850;
+    config.rawAngleFor850 = 16383 - prevRawAngleFor2150;
+    config.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
+    config.rawAngleFor2150 = 16383 - prevRawAngleFor850;
   */
   bool counterclockwise;
   static const bool defaultCounterclockwise = false;
@@ -89,10 +89,10 @@ struct HitecDServoConfig {
   static const int8_t defaultSoftStart = 20;
 
   /* `rawAngleFor850`, `rawAngleFor1500` and `rawAngleFor2150` define how servo
-  pulse widths are related to physical servo positions:
-  - `rawAngleFor850` defines the position that corresponds to a 850us pulse
-  - `rawAngleFor1500` defines the position that corresponds to a 1500us pulse
-  - `rawAngleFor2150` defines the position that corresponds to a 2150us pulse
+  pulse widths are related to physical servo angle:
+  - `rawAngleFor850` defines the angle for a 850us pulse (left endpoint)
+  - `rawAngleFor1500` defines the angle for a 1500us pulse (center point)
+  - `rawAngleFor2150` defines the angle for a 2150us pulse (right endpoint)
 
   Raw angles are defined by numbers ranging from 0 to 16383 (=2**14-1). If
   `counterclockwise=false`, higher numbers are clockwise. But if
