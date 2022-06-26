@@ -3,13 +3,39 @@
 
 #include <Arduino.h>
 
-#define HITECD_OK 1
-#define HITECD_ERR_NO_SERVO -1
-#define HITECD_ERR_NO_RESISTOR -2
-#define HITECD_ERR_CORRUPT -3
-#define HITECD_ERR_UNSUPPORTED_MODEL -4
-#define HITECD_ERR_NOT_ATTACHED -5
+/* Many of the functions in this library return error codes. The possible error
+codes are as follows: */
 
+/* OK (no error occurred) */
+#define HITECD_OK 1
+
+/* attach() was not called, or the call to attach() failed. */
+#define HITECD_ERR_NOT_ATTACHED -1
+
+/* No servo detected. */
+#define HITECD_ERR_NO_SERVO -2
+
+/* Missing pullup resistor. (Use a 2k resistor with a 5V microcontroller, or a
+1k resistor with a 3.3V microcontroller.) */
+#define HITECD_ERR_NO_PULLUP -3
+
+/* Corrupt response from servo. */
+#define HITECD_ERR_CORRUPT -4
+
+/* Unsupported model of servo. (Only D485HW is fully supported.) */
+#define HITECD_ERR_UNSUPPORTED_MODEL -5
+
+/* Confusing response from servo. */
+#define HITECD_ERR_CONFUSED -6
+
+/* hitecdErrToString() returns a string description of the given error code. You
+can print this with Serial for debugging purposes. For example:
+  int res = doSomething();
+  if (res < 0) {
+    Serial.print("Something went wrong: ");
+    Serial.println(hitecdErrToString(res));
+  }
+*/
 const char *hitecdErrToString(int err);
 
 struct HitecDServoConfig {

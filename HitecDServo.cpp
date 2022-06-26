@@ -5,18 +5,20 @@ const char *hitecdErrToString(int err) {
     return "OK";
   }
   switch (err) {
-    case HITECD_ERR_NO_SERVO:
-      return "No servo detected";
-    case HITECD_ERR_NO_RESISTOR:
-      return "Missing 2k resistor between signal wire and +5V";
-    case HITECD_ERR_CORRUPT: /* TODO: Split into "bad checksum" and "unexpected behavior" */
-      return "Corrupt response from servo";
-    case HITECD_ERR_UNSUPPORTED_MODEL:
-      return "Unsupported model of Hitec D servo (only D485HW is supported)";
     case HITECD_ERR_NOT_ATTACHED:
-      return "Not attached. Check if call to attach() failed.";
+      return "attach() was not called, or the call to attach() failed.";
+    case HITECD_ERR_NO_SERVO:
+      return "No servo detected.";
+    case HITECD_ERR_NO_PULLUP:
+      return "Missing pullup resistor.";
+    case HITECD_ERR_CORRUPT:
+      return "Corrupt response from servo.";
+    case HITECD_ERR_UNSUPPORTED_MODEL:
+      return "Unsupported model of servo.";
+    case HITECD_ERR_CONFUSED:
+      return "Confusing response from servo.";
     default:
-      return "Unknown error";
+      return "Unknown error.";
   }
 }
 
@@ -191,7 +193,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
     return res;
   }
   if (temp & 0xFF00) {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
   configOut->id = temp & 0xFF;
 
@@ -204,7 +206,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   } else if (temp == 0x0001) {
     configOut->counterclockwise = true;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   /* Read speed */
@@ -216,7 +218,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   } else if (temp <= 0x0012) {
     configOut->speed = temp*5;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   /* Read deadband. There are three deadband-related registers; their values are
@@ -237,7 +239,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
       temp0x66 == temp0x4E + 0x0004 && temp0x68 == temp0x4E + 0x000A) {
     configOut->deadband = temp0x4E / 4 + 1;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   /* Read softStart */
@@ -255,7 +257,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   } else if (temp == 0x0064) {
     configOut->softStart = 100;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   /* Read rawAngleFor850, rawAngleFor1500, rawAngleFor2150 */
@@ -286,7 +288,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
     configOut->failSafe = 0;
     configOut->failSafeLimp = false;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   /* Read overloadProtection */
@@ -325,7 +327,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   } else if (temp0x6C == temp0x8A && temp0x44 == temp0x8C) {
     configOut->smartSense = false;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   /* Read sensitivityRatio */
@@ -335,7 +337,7 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   if (temp >= 819 && temp <= 4095) {
     configOut->sensitivityRatio = temp;
   } else {
-    return HITECD_ERR_CORRUPT;
+    return HITECD_ERR_CONFUSED;
   }
 
   return HITECD_OK;
@@ -549,7 +551,7 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
   if (digitalRead(pin) != HIGH) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
-    return HITECD_ERR_NO_RESISTOR;
+    return HITECD_ERR_NO_PULLUP;
   }
 
   pinMode(pin, OUTPUT);
@@ -558,7 +560,7 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
 
   /* Note, readByte() can return HITECD_ERR_NO_SERVO if it times out. But, we
   know the servo is present, or else we'd have hit either HITECD_ERR_NO_SERVO or
-  HITECD_ERR_NO_RESISTOR above. So this is unlikely to happen unless something's
+  HITECD_ERR_NO_PULLUP above. So this is unlikely to happen unless something's
   horribly wrong. So for simplicity, we just round this off to
   HITECD_ERR_CORRUPT. */
 
