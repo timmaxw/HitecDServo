@@ -134,12 +134,26 @@ public:
   bool attached();
   void detach();
 
+  /* Write the servo's target point (i.e. tell the servo to move somewhere).
+  - writeTargetMicroseconds() expresses the target as microseconds of PWM width.
+  - writeTargetQuarterMicros() expresses the target as quarter-microseconds of
+    PWM width, which is more precise. In both cases, the target will be sent to
+    the servo via the serial protocol. */
+  void writeTargetMicroseconds(int16_t microseconds);
   void writeTargetQuarterMicros(int16_t quarterMicros);
 
-  int16_t readCurrentRawAngle();
+  /* Reads the servo's current point. You can use this to measure the servo's
+  progress towards its target point. These three methods return the same value,
+  but expressed in different units. */
+  int16_t readCurrentMicroseconds();
   int16_t readCurrentQuarterMicros();
+  int16_t readCurrentRawAngle();
 
-  int readConfig(HitecDServoConfig *config_out);
+  /* Returns the servo's model number, e.g. 485 for a D485HW model. */
+  int readModelNumber();
+
+  /* Retrieves the configuration from the servo. */
+  int readConfig(HitecDServoConfig *configOut);
 
   /* Resets the servo to its factory-default configuration, then uploads the
   given configuration. Note: Right now, this only works for the D485HW model.

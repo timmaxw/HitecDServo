@@ -127,20 +127,42 @@ void HitecDServo::detach() {
   pin = -1;
 }
 
+void HitecDServo::writeTargetMicroseconds(int16_t microseconds) {
+  writeTargetQuarterMicros(4 * microseconds);
+}
+
 void HitecDServo::writeTargetQuarterMicros(int16_t quarterMicros) {
   if (!attached()) {
     return;
   }
-
   quarterMicros = constrain(quarterMicros, 4*850, 4*2150);
   writeRawRegister(0x1E, quarterMicros - 3000);
+}
+
+int16_t HitecDServo::readCurrentMicroseconds() {
+  int16_t quarterMicros = readCurrentQuarterMicros();
+  if (quarterMicros < 0) {
+    return quarterMicros;
+  }
+  return quarterMicros / 4;
+}
+
+int16_t HitecDServo::readCurrentQuarterMicros() {
+  int16_t rawAngle = readCurrentRawAngle();
+  if (rawAngle < 0) {
+    return rawAngle;
+  }
+  if (rawAngle < rawAngleFor1500) {
+    return map(rawAngle, rawAngleFor850, rawAngleFor1500, 4*850, 4*1500);
+  } else {
+    return map(rawAngle, rawAngleFor1500, rawAngleFor2150, 4*1500, 4*2150);
+  }
 }
 
 int16_t HitecDServo::readCurrentRawAngle() {
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
   }
-
   int res;
   uint16_t currentRawAngle;
   if ((res = readRawRegister(0x0C, &currentRawAngle)) != HITECD_OK) {
@@ -149,19 +171,11 @@ int16_t HitecDServo::readCurrentRawAngle() {
   return currentRawAngle;
 }
 
-int16_t HitecDServo::readCurrentQuarterMicros() {
-  int16_t currentRawAngle = readCurrentRawAngle();
-  if (currentRawAngle < 0) {
-    return currentRawAngle;
+int HitecDServo::readModelNumber() {
+  if (!attached()) {
+    return HITECD_ERR_NOT_ATTACHED;
   }
-
-  if (currentRawAngle < rawAngleFor1500) {
-    return map(currentRawAngle,
-      rawAngleFor850, rawAngleFor1500, 4*850, 4*1500);
-  } else {
-    return map(currentRawAngle,
-      rawAngleFor1500, rawAngleFor2150, 4*1500, 4*2150);
-  }
+  return modelNumber;
 }
 
 int HitecDServo::readConfig(HitecDServoConfig *configOut) {
