@@ -122,6 +122,10 @@ void printConfig() {
     Serial.println(F("Off (default)"));
   }
 
+  Serial.print(F("  Power limit: "));
+  printValueWithDefault(config.powerLimit,
+    HitecDServoConfig::defaultPowerLimit);
+
   Serial.print(F("  Overload protection: "));
   if (config.overloadProtection < 100) {
     Serial.print(config.overloadProtection);
@@ -391,6 +395,33 @@ cancel:
   Serial.println(F("Current soft start will be kept."));
 }
 
+void changePowerLimitSetting() {
+  Serial.print(F("Current power limit: "));
+  printValueWithDefault(config.powerLimit,
+    HitecDServoConfig::defaultPowerLimit);
+
+  Serial.println(F(
+    "Enter new power limit from 1 to 2000 (or nothing to cancel):"));
+  int16_t newPowerLimit;
+  if (!scanNumber(&newPowerLimit) || newPowerLimit == config.powerLimit) {
+    goto cancel;
+  }
+  if (newPowerLimit < 1 || newPowerLimit > 2000) {
+    Serial.println(F("Error: Invalid power limit."));
+    goto cancel;
+  }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
+
+  config.powerLimit = newPowerLimit;
+  writeConfig();
+  return;
+
+cancel:
+  Serial.println(F("Current power limit will be kept."));
+}
+
 void changeOverloadProtectionSetting() {
   Serial.print(F("Current overload protection: "));
   if (config.overloadProtection < 100) {
@@ -591,6 +622,7 @@ void printHelp() {
   Serial.println(F("  softstart   - Change soft-start setting"));
   Serial.println(F("  angle       - Change angle neutral/endpoint settings"));
   Serial.println(F("  failsafe    - Change fail-safe setting"));
+  Serial.println(F("  powerlimit  - Change power-limit setting"));
   Serial.println(F("  overload    - Change overload-protection setting"));
   Serial.println(F("  smartsense  - Change smart sense setting"));
   Serial.println(F("  sensitivity - Change sensitivity ratio setting"));
@@ -619,6 +651,8 @@ void loop() {
     changeAngleSettings();
   } else if (parseWord("failsafe")) {
     changeFailSafeSetting();
+  } else if (parseWord("powerlimit")) {
+    changePowerLimitSetting();
   } else if (parseWord("overload")) {
     changeOverloadProtectionSetting();
   } else if (parseWord("smartsense")) {

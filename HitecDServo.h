@@ -127,6 +127,12 @@ struct HitecDServoConfig {
   static const int16_t defaultFailSafe = 0;
   static const bool defaultFailSafeLimp = false;
 
+  /* `powerLimit` sets the maximum power that the servo can use. It ranges from
+  1 to 2000 (the default). Note, this is an undocumented setting that the HPC-11
+  can't change. */
+  int16_t powerLimit;
+  static const int16_t defaultPowerLimit = 2000;
+
   /* If the servo is overloaded or stalled for more than about 3 seconds, then
   it will automatically reduce power to `overloadProtection` percent to prevent
   damage. Legal values are:

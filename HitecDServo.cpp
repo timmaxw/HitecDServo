@@ -33,6 +33,7 @@ HitecDServoConfig::HitecDServoConfig() :
   rawAngleFor2150(-1),
   failSafe(defaultFailSafe),
   failSafeLimp(defaultFailSafeLimp),
+  powerLimit(defaultPowerLimit),
   overloadProtection(defaultOverloadProtection),
   smartSense(defaultSmartSense),
   sensitivityRatio(defaultSensitivityRatio)
@@ -301,6 +302,16 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
     return HITECD_ERR_CONFUSED;
   }
 
+  /* Read powerLimit */
+  if ((res = readRawRegister(0x56, &temp)) != HITECD_OK) {
+    return res;
+  }
+  if (temp == 0x0FFF) {
+    configOut->powerLimit = 2000;
+  } else {
+    configOut->powerLimit = temp;
+  }
+
   /* Read overloadProtection */
   if ((res = readRawRegister(0x9C, &temp)) != HITECD_OK) {
     return res;
@@ -467,6 +478,11 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
     writeRawRegister(0x4C, config.failSafe);
   } else if (config.failSafeLimp != HitecDServoConfig::defaultFailSafeLimp) {
     writeRawRegister(0x4C, 0x0000);
+  }
+
+  /* Write powerLimit */
+  if (config.powerLimit != HitecDServoConfig::defaultPowerLimit) {
+    writeRawRegister(0x56, config.powerLimit);
   }
 
   /* Write overloadProtection */
