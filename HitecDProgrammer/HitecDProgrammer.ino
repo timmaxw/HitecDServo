@@ -5,6 +5,7 @@
 HitecDServo servo;
 int modelNumber;
 HitecDServoConfig config;
+bool allowUnsupportedModel = false;
 
 void printErr(int res, bool needReset) {
   if (res == HITECD_OK) {
@@ -141,22 +142,48 @@ void printConfig() {
     HitecDServoConfig::defaultSensitivityRatio);
 }
 
+bool checkSupportedModel() {
+  if (servo.isModelSupported() || allowUnsupportedModel) {
+    return true;
+  }
+
+  Serial.println(F(
+    "Warning: Your servo model is not fully supported. Changing the\r\n"
+    "settings may lead to unexpected behavior or even damage the servo.\r\n"
+    "Proceed at your own risk. If you want to proceed, please enter\r\n"
+    "\"This might damage the servo\" exactly (or enter nothing to cancel):"));
+  scanRawInput();
+  if (parseWord("This might damage the servo")) {
+    allowUnsupportedModel = true;
+    return true;
+  } else if (rawInputLen == 0) {
+    return false;
+  } else {
+    Serial.println(F("You did not enter \"This might damage the servo\"."));
+    return false;
+  }
+}
+
 void writeConfig() {
   int res;
-
   Serial.println(F("Changing servo config..."));
 
-  /* TODO: something about overriding the unsupported-model check */
-  if ((res = servo.writeConfig(config)) != HITECD_OK) {
-    printErr(res, false);
-  } else {
-    Serial.println(F("Done."));
+  res = servo.writeConfigUnsupportedModelThisMightDamageTheServo(
+    config,
+    allowUnsupportedModel
+  );
+  if (res != HITECD_OK) {
+    printErr(res, true);
   }
 
   /* Read back the settings to make sure we have the latest values. */
   if ((res = servo.readConfig(&config)) != HITECD_OK) {
     printErr(res, true);
   }
+
+  Serial.println(F("Done."));
+
+  return true;
 }
 
 void changeIdSetting() {
@@ -172,6 +199,9 @@ void changeIdSetting() {
   }
   if (newId < 0 || newId > 254) {
     Serial.println(F("Error: ID must be between 0 and 254."));
+    goto cancel;
+  }
+  if (!checkSupportedModel()) {
     goto cancel;
   }
 
@@ -208,6 +238,9 @@ void changeDirectionSetting() {
   if (newCounterclockwise == config.counterclockwise) {
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.counterclockwise = newCounterclockwise;
   int16_t prevRawAngleFor850 = config.rawAngleFor850;
@@ -239,6 +272,9 @@ void changeSpeedSetting() {
     Serial.println(F("Error: Invalid speed."));
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.speed = newSpeed;
   writeConfig();
@@ -263,6 +299,9 @@ void changeDeadbandSetting() {
     Serial.println(F("Error: Invalid deadband."));
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.deadband = newDeadband;
   writeConfig();
@@ -285,6 +324,9 @@ void changeSoftStartSetting() {
   }
   if (newSoftStart < 20 || newSoftStart > 100 || newSoftStart % 20 != 0) {
     Serial.println(F("Error: Invalid soft start."));
+    goto cancel;
+  }
+  if (!checkSupportedModel()) {
     goto cancel;
   }
 
@@ -336,6 +378,9 @@ void changeFailSafeSetting() {
       newFailSafeLimp == config.failSafeLimp) {
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.failSafe = newFailSafe;
   config.failSafeLimp = newFailSafeLimp;
@@ -375,6 +420,9 @@ void changeOverloadProtectionSetting() {
   if (newOverloadProtection == config.overloadProtection) {
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.overloadProtection = newOverloadProtection;
   writeConfig();
@@ -408,6 +456,9 @@ void changeSmartSenseSetting() {
   if (newSmartSense == config.smartSense) {
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.smartSense = newSmartSense;
   writeConfig();
@@ -438,6 +489,9 @@ void changeSensitivityRatioSetting() {
     Serial.println(F("Error: Invalid sensitivity ratio."));
     goto cancel;
   }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
 
   config.sensitivityRatio = newSensitivityRatio;
   writeConfig();
@@ -460,6 +514,9 @@ void resetSettingsToFactoryDefaults() {
     goto cancel;
   } else {
     Serial.println(F("Error: You did not enter \"Yes\" or \"No\"."));
+    goto cancel;
+  }
+  if (!checkSupportedModel()) {
     goto cancel;
   }
 
@@ -505,7 +562,10 @@ void setup() {
     printRegisterDump();
     Serial.println(F(
       "If you had already changed the values of any settings, please note\r\n"
-      "them in the issue. Thanks!\r\n"
+      "them in the issue. Thanks!\r\n"));
+    Serial.println(F("Press enter to continue..."));
+    scanRawInput(NO_ECHO);
+    Serial.println(F(
       "===================================================================="
     ));
   }

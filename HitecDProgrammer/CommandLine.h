@@ -6,12 +6,13 @@
 /* Helper functions for a command-line interface over the serial port */
 
 /* scanRawInput() reads one line of input over the serial port and stores it in
-the rawInput buffer. It also echoes it back to the user, because the Arduino
-serial console doesn't do that, and it's helpful for the user to be able to see
-what they typed. */
+the rawInput buffer. It also echoes it back to the user (unless the NO_ECHO flag
+is set) because the Arduino serial console doesn't echo user input, and it's
+helpful for the user to be able to see what they typed. */
+#define NO_ECHO (1 << 0)
+void scanRawInput(int flags = 0);
 extern char rawInput[128];
 extern int rawInputLen;
-void scanRawInput();
 
 /* parseNumber() tries to interpret rawInput as a positive number:
 - If valid, it stores it in *valOut and returns true.

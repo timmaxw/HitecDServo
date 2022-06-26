@@ -3,7 +3,7 @@
 char rawInput[128];
 int rawInputLen;
 
-void scanRawInput() {
+void scanRawInput(int flags = 0) {
   /* Discard any leftover data in the serial buffer; it would have been
   sent before the prompt was printed, so it probably wasn't meant as input to
   the prompt. */
@@ -49,12 +49,14 @@ void scanRawInput() {
     ++rawInputLen;
   }
 
-  if (rawInputLen > 0) {
-    Serial.print(F("You entered: \""));
-    Serial.write(rawInput, rawInputLen);
-    Serial.println('\"');
-  } else {
-    Serial.println(F("You entered nothing."));
+  if (!(flags & NO_ECHO)) {
+    if (rawInputLen > 0) {
+      Serial.print(F("You entered: \""));
+      Serial.write(rawInput, rawInputLen);
+      Serial.println('\"');
+    } else {
+      Serial.println(F("You entered nothing."));
+    }
   }
 }
 
