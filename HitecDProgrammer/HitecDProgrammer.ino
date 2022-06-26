@@ -186,10 +186,12 @@ int16_t scanNumber(bool allowEmptyAsNegativeOne, bool quarters=false) {
 
 void printValueWithDefault(int16_t value, int16_t defaultValue) {
   Serial.print(value, DEC);
-  if (value != defaultValue) {
-    Serial.println(F(" *"));
-  } else {
-    Serial.println();
+  if (value == defaultValue) {
+    Serial.println(F(" (default)"));
+  } else if (defaultValue != -1) {
+    Serial.print(F(" (default is "));
+    Serial.print(defaultValue, DEC);
+    Serial.println(')');
   }
 }
 
@@ -202,9 +204,9 @@ void printConfig() {
 
   Serial.print(F("  Direction: "));
   if (servoConfig.counterclockwise) {
-    Serial.println(F("Counterclockwise *"));
+    Serial.println(F("Counterclockwise (default is clockwise)"));
   } else {
-    Serial.println(F("Clockwise"));
+    Serial.println(F("Clockwise (default)"));
   }
 
   Serial.print(F("  Speed: "));
@@ -233,40 +235,83 @@ void printConfig() {
 
   Serial.print(F("  Fail safe: "));
   if (servoConfig.failSafe) {
-    printValueWithDefault(servoConfig.failSafe,
-      HitecDServoConfig::defaultFailSafe);
+    Serial.print(servoConfig.failSafe);
+    Serial.println(F(" (default is Off)"));
   } else if (servoConfig.failSafeLimp) {
-    Serial.println(F("Limp *"));
+    Serial.println(F("Limp (default is Off)"));
   } else {
-    Serial.println(F("Off"));
+    Serial.println(F("Off (default)"));
   }
 
   Serial.print(F("  Overload protection: "));
   if (servoConfig.overloadProtection < 100) {
-    printValueWithDefault(servoConfig.overloadProtection,
-      HitecDServoConfig::defaultOverloadProtection);
+    Serial.print(servoConfig.overloadProtection);
+    Serial.println(F(" (default is Off)"));
   } else {
-    Serial.println(F("Off"));
+    Serial.println(F("Off (default)"));
   }
 
   Serial.print(F("  Smart sense: "));
   if (servoConfig.smartSense) {
-    Serial.println(F("On"));
+    Serial.println(F("On (default)"));
   } else {
-    Serial.println(F("Off *"));
+    Serial.println(F("Off (default is On)"));
   }
 
   Serial.print(F("  Sensitivity ratio: "));
   printValueWithDefault(servoConfig.sensitivityRatio,
     HitecDServoConfig::defaultSensitivityRatio);
-
-  Serial.println(F("  (* Indicates non-default value)"));
 }
 
 void printHelp() {
   Serial.println(F("Available commands:"));
+  Serial.println(F("  1 - Change ID setting"));
+  Serial.println(F("  2 - Change direction setting"));
+  Serial.println(F("  3 - Change speed setting"));
+  Serial.println(F("  4 - Change deadband setting"));
+  Serial.println(F("  5 - Change soft-start setting"));
+  Serial.println(F("  6 - Change angle neutral/endpoint settings"));
+  Serial.println(F("  7 - Change fail-safe setting"));
+  Serial.println(F("  8 - Change overload-protection setting"));
+  Serial.println(F("  9 - Change Smart Sense setting"));
+  Serial.println(F("  0 - Change sensitivity ratio setting"));
   Serial.println(F("  V - View all servo settings"));
   Serial.println(F("  ? - Show this list of commands again"));
+}
+
+void writeConfig() {
+  Serial.println(F("Changing servo config..."));
+  int res;
+  if ((res = servo.writeConfig(servoConfig)) != HITECD_OK) {
+    printErr(res, false);
+    /* Something went wrong. To avoid being stuck in an incorrect state, re-read
+    the true config from the servo. */
+    if ((res = servo.readConfig(&servoConfig)) != HITECD_OK) {
+      printErr(res, true);
+    }
+    return;
+  }
+  Serial.println(F("Done."));
+}
+
+void changeIdSetting() {
+  Serial.print(F("Current ID: "));
+  printValueWithDefault(servoConfig.id,
+    HitecDServoConfig::defaultId);
+  Serial.println(F("Enter new ID (or enter nothing to cancel):"));
+  int16_t newId = scanNumber(true);
+  if (newId == -1 || newId == servoConfig.id) {
+    goto cancel;
+  }
+  if (newId < 0 || newId >= 255) {
+    Serial.println(F("Invalid ID."));
+    goto cancel;
+  }
+  servoConfig.id = newId;
+  writeConfig();
+  return;
+cancel:
+  Serial.println(F("Current ID will be kept."));
 }
 
 void setup() {
@@ -314,6 +359,9 @@ void setup() {
 }
 
 void loop() {
+  Serial.println(F(
+    "====================================================================\r\n"
+  ));
   Serial.println(F("Enter a command:"));
   scanRawInput();
   if (rawInputLen != 1) {
@@ -321,6 +369,9 @@ void loop() {
     return;
   }
   switch (rawInput[0]) {
+  case '1':
+    changeIdSetting();
+    break;
   case 'V':
     printConfig();
     break;

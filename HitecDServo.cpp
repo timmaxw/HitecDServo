@@ -500,13 +500,22 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
     writeRawRegister(0x64, config.sensitivityRatio);
   }
 
-  /* The DPC-11 writes these registers to constant values after changing other
-  settings. I assume they tell the servo to reset or recalculate something? We
-  do the same to be safe. */
+  /* Writing 0xFFFF to 0x70 tells the servo to save its settings to EEPROM */
   writeRawRegister(0x70, 0xFFFF);
+
+  /* Writing 0x0001 to 0x46 tells the servo to reset itself (necessary after
+  some settings changes) */
   writeRawRegister(0x46, 0x0001);
+
+  /* After the servo resets itself, it won't respond to any commands for 1
+  second. */
   delay(1000);
-  // writeRawRegister(0x22, 0x1000);
+
+  /* I don't know what writing 0x1000 to 0x22 does, but the HPC-11 does it after
+  some settings changes, so we do it too, just to be safe. */
+  writeRawRegister(0x22, 0x1000);
+
+  return HITECD_OK;
 }
 
 int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {

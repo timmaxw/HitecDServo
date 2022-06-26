@@ -41,9 +41,9 @@ const char *hitecdErrToString(int err);
 struct HitecDServoConfig {
   /* The default constructor initializes the settings to factory-default values.
 
-  `rawAngleFor850`, `rawAngleFor1500`, and `rawAngleFor2150` will be set to -1; this isn't the
-  factory-default value, but it will cause `writeConfig()` to keep the factory-
-  default value. */
+  `rawAngleFor850`, `rawAngleFor1500`, and `rawAngleFor2150` will be set to -1;
+  this isn't the factory-default value, but it will cause `writeConfig()` to
+  keep the factory-default value. */
   HitecDServoConfig();
 
   /* `id` is an arbitrary number from 0 to 254. Intended for keeping track of
