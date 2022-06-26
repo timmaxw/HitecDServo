@@ -275,19 +275,21 @@ void printConfig() {
 }
 
 void writeConfig() {
-  Serial.println(F("Changing servo config..."));
   int res;
+
+  Serial.println(F("Changing servo config..."));
+
   /* TODO: something about overriding the unsupported-model check */
   if ((res = servo.writeConfig(config)) != HITECD_OK) {
     printErr(res, false);
-    /* Something went wrong. To avoid being stuck in an incorrect state, re-read
-    the true config from the servo. */
-    if ((res = servo.readConfig(&config)) != HITECD_OK) {
-      printErr(res, true);
-    }
-    return;
+  } else {
+    Serial.println(F("Done."));
   }
-  Serial.println(F("Done."));
+
+  /* Read back the settings to make sure we have the latest values. */
+  if ((res = servo.readConfig(&config)) != HITECD_OK) {
+    printErr(res, true);
+  }
 }
 
 void changeIdSetting() {
@@ -578,6 +580,31 @@ cancel:
   Serial.println(F("Current sensitivity ratio will be kept."));
 }
 
+void resetSettingsToFactoryDefaults() {
+  /* Print a copy of the servo config, in case the user changes their mind */
+  printConfig();
+
+  Serial.println(F(
+    "Reset all settings to factory defaults? Enter \"Yes\" or \"No\":"));
+  scanRawInput();
+  if (parseWord("Yes")) {
+    (void)0;
+  } else if (parseWord("No") || rawInputLen == 0) {
+    goto cancel;
+  } else {
+    Serial.println(F("Error: You did not enter \"Yes\" or \"No\"."));
+    goto cancel;
+  }
+
+  config = HitecDServoConfig();
+  writeConfig();
+  printConfig();
+  return;
+
+cancel:
+  Serial.println(F("Settings will not be reset to factory defaults."));
+}
+
 void setup() {
   int res;
 
@@ -628,6 +655,7 @@ void setup() {
 
 void printHelp() {
   Serial.println(F("Available commands:"));
+  Serial.println(F("  show        - Show current servo settings"));
   Serial.println(F("  id          - Change ID setting"));
   Serial.println(F("  direction   - Change direction setting"));
   Serial.println(F("  speed       - Change speed setting"));
@@ -638,7 +666,7 @@ void printHelp() {
   Serial.println(F("  overload    - Change overload-protection setting"));
   Serial.println(F("  smartsense  - Change smart sense setting"));
   Serial.println(F("  sensitivity - Change sensitivity ratio setting"));
-  Serial.println(F("  show        - Show current servo settings"));
+  Serial.println(F("  reset       - Reset all settings to factory defaults"));
   Serial.println(F("  help        - Show this list of commands again"));
 }
 
@@ -647,7 +675,9 @@ void loop() {
     "===================================================================="));
   Serial.println(F("Enter a command:"));
   scanRawInput();
-  if (parseWord("id")) {
+  if (parseWord("show")) {
+    printConfig();
+  } else if (parseWord("id")) {
     changeIdSetting();
   } else if (parseWord("direction")) {
     changeDirectionSetting();
@@ -667,8 +697,8 @@ void loop() {
     changeSmartSenseSetting();
   } else if (parseWord("sensitivity")) {
     changeSensitivityRatioSetting();
-  } else if (parseWord("show")) {
-    printConfig();
+  } else if (parseWord("reset")) {
+    resetSettingsToFactoryDefaults();
   } else if (parseWord("help")) {
     printHelp();
   } else {
