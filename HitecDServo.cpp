@@ -180,6 +180,16 @@ int HitecDServo::readModelNumber() {
   return modelNumber;
 }
 
+bool HitecDServo::isModelSupported() {
+  if (!attached()) {
+    return false;
+  }
+  switch (modelNumber) {
+    case 485: return true;
+    default: return false;
+  }
+}
+
 int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
@@ -344,12 +354,12 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
 }
 
 int HitecDServo::writeConfig(const HitecDServoConfig &config) {
-  return writeConfigUnknownModelThisMightDamageTheServo(config, false);
+  return writeConfigUnsupportedModelThisMightDamageTheServo(config, false);
 }
 
-int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
+int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   const HitecDServoConfig &config,
-  bool bypassModelNumberCheck
+  bool allowUnsupportedModel
 ) {
   int res;
   uint16_t temp;
@@ -358,11 +368,8 @@ int HitecDServo::writeConfigUnknownModelThisMightDamageTheServo(
     return HITECD_ERR_NOT_ATTACHED;
   }
 
-  if (!bypassModelNumberCheck) {
-    switch (modelNumber) {
-      case 485: break;
-      default: return HITECD_ERR_UNSUPPORTED_MODEL;
-    }
+  if (!isModelSupported() && !allowUnsupportedModel) {
+    return HITECD_ERR_UNSUPPORTED_MODEL;
   }
 
   /* Reset to factory defaults. (We'll then ignore any settings that are already

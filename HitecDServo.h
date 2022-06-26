@@ -181,6 +181,10 @@ public:
   /* Returns the servo's model number, e.g. 485 for a D485HW model. */
   int readModelNumber();
 
+  /* Returns whether this model of servo is considered fully-supported by this
+  version of the HitecDServo library. */
+  bool isModelSupported();
+
   /* Retrieves the configuration from the servo. */
   int readConfig(HitecDServoConfig *configOut);
 
@@ -191,12 +195,11 @@ public:
 
   /* It's dangerous to change the configuration of a non-D485HW model; this
   hasn't been tested, and might damage the servo. If you're willing to take the
-  risk, you can use writeConfigUnknownModelThisMightDamageTheServo() with
-  bypassModelNumberCheck=true, to bypass the logic that checks the servo model.
-  */
-  int writeConfigUnknownModelThisMightDamageTheServo(
+  risk, you can use writeConfigUnsupportedModelThisMightDamageTheServo() with
+  allowUnsupportedModel=true to skip checking the servo model. */
+  int writeConfigUnsupportedModelThisMightDamageTheServo(
     const HitecDServoConfig &config,
-    bool bypassModelNumberCheck);
+    bool allowUnsupportedModel);
 
   /* Directly read/write registers on the servo. Don't use this unless you know
   what you're doing. (The only reason these methods are declared public is so
