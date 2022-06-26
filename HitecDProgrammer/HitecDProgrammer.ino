@@ -154,78 +154,113 @@ int16_t scanNumber(bool allowEmptyAsNegativeOne, bool quarters=false) {
       }
     }
 
+    if (negative) number = -number;
+
     if (i != rawInputLen) {
       Serial.println(F("Error: Invalid input. Please try again:"));
       continue;
     }
 
-    if (negative) number = -number;
+    Serial.print(F("You entered: "));
+    Serial.write(rawInput, rawInputLen);
+    Serial.println();
+
     return number;
+  }
+}
+
+void printValueWithDefault(int16_t value, int16_t defaultValue) {
+  Serial.print(value, DEC);
+  if (value != defaultValue) {
+    Serial.println(F(" *"));
+  } else {
+    Serial.println();
   }
 }
 
 void printConfig() {
   Serial.print(F("ID: "));
-  Serial.println(servoConfig.id, DEC);
+  printValueWithDefault(servoConfig.id,
+    HitecDServoConfig::defaultId);
 
   Serial.print(F("Direction: "));
   if (servoConfig.counterclockwise) {
-    Serial.println(F("Counterclockwise"));
+    Serial.println(F("Counterclockwise *"));
   } else {
     Serial.println(F("Clockwise"));
   }
 
   Serial.print(F("Speed: "));
-  Serial.println(servoConfig.speed, DEC);
+  printValueWithDefault(servoConfig.speed,
+    HitecDServoConfig::defaultSpeed);
 
   Serial.print(F("Deadband: "));
-  Serial.println(servoConfig.deadband, DEC);
+  printValueWithDefault(servoConfig.deadband,
+    HitecDServoConfig::defaultDeadband);
 
   Serial.print(F("Soft start: "));
-  Serial.println(servoConfig.softStart, DEC);
+  printValueWithDefault(servoConfig.softStart,
+    HitecDServoConfig::defaultSoftStart);
 
-  Serial.print(F("Left point (14-bit): "));
-  Serial.println(servoConfig.leftPoint14Bit, DEC);
-  Serial.print(F("Center point (14-bit): "));
-  Serial.println(servoConfig.centerPoint14Bit, DEC);
-  Serial.print(F("Right point (14-bit): "));
-  Serial.println(servoConfig.rightPoint14Bit, DEC);
+  Serial.print(F("Raw angle for 850us PWM: "));
+  printValueWithDefault(servoConfig.rawAngleFor850,
+    HitecDServoConfig::defaultRawAngleFor850(modelNumber));
+
+  Serial.print(F("Raw angle for 1500us PWM: "));
+  printValueWithDefault(servoConfig.rawAngleFor1500,
+    HitecDServoConfig::defaultRawAngleFor1500(modelNumber));
+
+  Serial.print(F("Raw angle for 2150us PWM: "));
+  printValueWithDefault(servoConfig.rawAngleFor2150,
+    HitecDServoConfig::defaultRawAngleFor2150(modelNumber));
 
   Serial.print(F("Fail safe: "));
   if (servoConfig.failSafe) {
-    Serial.println(servoConfig.failSafe, DEC);
+    printValueWithDefault(servoConfig.failSafe,
+      HitecDServoConfig::defaultFailSafe);
   } else if (servoConfig.failSafeLimp) {
-    Serial.println(F("Limp"));
+    Serial.println(F("Limp *"));
   } else {
     Serial.println(F("Off"));
   }
 
   Serial.print(F("Overload protection: "));
-  Serial.println(servoConfig.overloadProtection, DEC);
+  if (servoConfig.overloadProtection < 100) {
+    printValueWithDefault(servoConfig.overloadProtection,
+      HitecDServoConfig::defaultOverloadProtection);
+  } else {
+    Serial.println(F("Off"));
+  }
 
   Serial.print(F("Smart sense: "));
   if (servoConfig.smartSense) {
     Serial.println(F("On"));
   } else {
-    Serial.println(F("Off"));
+    Serial.println(F("Off *"));
   }
 
   Serial.print(F("Sensitivity ratio: "));
-  Serial.println(servoConfig.sensitivityRatio, DEC);
+  printValueWithDefault(servoConfig.sensitivityRatio,
+    HitecDServoConfig::defaultSensitivityRatio);
+
+  Serial.println(F("(* Indicates non-default value)"));
 }
 
 void setup() {
+  int res;
+
   Serial.begin(115200);
 
   Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
   int pin = scanNumber(false);
-  servo.attach(pin);
+  if ((res = servo.attach(pin)) != HITECD_OK) {
+    printErr(res, true);
+  }
 
-  Serial.println("Reading model number...");
-  modelNumber = servo.readModelNumber();
-  if (modelNumber < 0) {
+  if ((modelNumber = servo.readModelNumber()) < 0) {
     printErr(modelNumber, true);
   }
+
   Serial.print("Model number: D");
   Serial.println(modelNumber, DEC);
 
@@ -239,9 +274,7 @@ void setup() {
     printRegisterDump();
   }
 
-  Serial.println(F("Reading configuration..."));
-  int res = servo.readConfig(&servoConfig);
-  if (res < 0) {
+  if ((res = servo.readConfig(&servoConfig)) < 0) {
     printErr(res, true);
   }
   printConfig();
