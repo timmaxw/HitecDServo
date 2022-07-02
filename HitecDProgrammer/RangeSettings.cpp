@@ -39,12 +39,12 @@ void changeAngleSettings850() {
     Serial.print(F("Tentative raw angle for 850us PWM (left endpoint): "));
   }
   printValueWithDefault(tentativeRawAngleFor850,
-    HitecDServoConfig::defaultRawAngleFor850(modelNumber));
+    HitecDSettings::defaultRawAngleFor850(modelNumber));
   if (measuredMinRawAngle != -1) {
     Serial.print(F("Measured minimum for your servo: "));
     Serial.println(measuredMinRawAngle);
   } else {
-    int16_t safeMinRawAngle = HitecDServoConfig::safeMinRawAngle(modelNumber);
+    int16_t safeMinRawAngle = HitecDSettings::safeMinRawAngle(modelNumber);
     if (safeMinRawAngle != -1) {
       Serial.print(F("Safe minimum for your servo: "));
       Serial.println(safeMinRawAngle);
@@ -61,7 +61,7 @@ void changeAngleSettings1500() {
     Serial.print(F("Tentative raw angle for 1500us PWM (center point): "));
   }
   printValueWithDefault(tentativeRawAngleFor1500,
-    HitecDServoConfig::defaultRawAngleFor1500(modelNumber));
+    HitecDSettings::defaultRawAngleFor1500(modelNumber));
 
   changeSingleAngleSetting(&tentativeRawAngleFor1500);
 }
@@ -73,12 +73,12 @@ void changeAngleSettings2150() {
     Serial.print(F("Tentative raw angle for 2150us PWM (right endpoint): "));
   }
   printValueWithDefault(tentativeRawAngleFor2150,
-    HitecDServoConfig::defaultRawAngleFor2150(modelNumber));
+    HitecDSettings::defaultRawAngleFor2150(modelNumber));
   if (measuredMaxRawAngle != -1) {
     Serial.print(F("Measured maximum for your servo: "));
     Serial.println(measuredMaxRawAngle);
   } else {
-    int16_t safeMaxRawAngle = HitecDServoConfig::safeMaxRawAngle(modelNumber);
+    int16_t safeMaxRawAngle = HitecDSettings::safeMaxRawAngle(modelNumber);
     if (safeMaxRawAngle != -1) {
       Serial.print(F("Safe maximum for your servo: "));
       Serial.println(safeMaxRawAngle);

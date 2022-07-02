@@ -22,7 +22,7 @@ const char *hitecdErrToString(int err) {
   }
 }
 
-HitecDServoConfig::HitecDServoConfig() :
+HitecDSettings::HitecDSettings() :
   id(defaultId),
   counterclockwise(defaultCounterclockwise),
   speed(defaultSpeed),
@@ -39,28 +39,28 @@ HitecDServoConfig::HitecDServoConfig() :
   sensitivityRatio(defaultSensitivityRatio)
 { }
 
-int16_t HitecDServoConfig::defaultRawAngleFor850(int modelNumber) {
+int16_t HitecDSettings::defaultRawAngleFor850(int modelNumber) {
   switch (modelNumber) {
     case 485: return 3381;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::defaultRawAngleFor1500(int modelNumber) {
+int16_t HitecDSettings::defaultRawAngleFor1500(int modelNumber) {
   switch (modelNumber) {
     case 485: return 8192;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::defaultRawAngleFor2150(int modelNumber) {
+int16_t HitecDSettings::defaultRawAngleFor2150(int modelNumber) {
   switch (modelNumber) {
     case 485: return 13002;
     default: return -1;
   }
 }
 
-int16_t HitecDServoConfig::safeMinRawAngle(int modelNumber) {
+int16_t HitecDSettings::safeMinRawAngle(int modelNumber) {
   switch (modelNumber) {
     /* I measured 731, and added +50 as a margin of error */
     case 485: return 731 + 50;
@@ -68,7 +68,7 @@ int16_t HitecDServoConfig::safeMinRawAngle(int modelNumber) {
   }
 }
 
-int16_t HitecDServoConfig::safeMaxRawAngle(int modelNumber) {
+int16_t HitecDSettings::safeMaxRawAngle(int modelNumber) {
   int16_t min = safeMinRawAngle(modelNumber);
   if (min == -1) {
     return -1;
@@ -191,7 +191,7 @@ bool HitecDServo::isModelSupported() {
   }
 }
 
-int HitecDServo::readConfig(HitecDServoConfig *configOut) {
+int HitecDServo::readConfig(HitecDSettings *configOut) {
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
   }
@@ -365,12 +365,12 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   return HITECD_OK;
 }
 
-int HitecDServo::writeConfig(const HitecDServoConfig &config) {
+int HitecDServo::writeConfig(const HitecDSettings &config) {
   return writeConfigUnsupportedModelThisMightDamageTheServo(config, false);
 }
 
 int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
-  const HitecDServoConfig &config,
+  const HitecDSettings &config,
   bool allowUnsupportedModel
 ) {
   int res;
@@ -395,7 +395,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   writeRawRegister(0x9A, 0x0003);
 
   /* Write id */
-  if (config.id != HitecDServoConfig::defaultId) {
+  if (config.id != HitecDSettings::defaultId) {
     writeRawRegister(0x32, config.id);
   }
 
@@ -405,12 +405,12 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
 
   /* Write speed */
-  if (config.speed != HitecDServoConfig::defaultSpeed) {
+  if (config.speed != HitecDSettings::defaultSpeed) {
     writeRawRegister(0x54, config.speed / 5);
   }
 
   /* Write deadband */
-  if (config.deadband != HitecDServoConfig::defaultDeadband) {
+  if (config.deadband != HitecDSettings::defaultDeadband) {
     /* The DPC-11 always writes this register to the this constant whenever it
     changes the deadband. I'm not sure why, but we do the same to be safe. */
     writeRawRegister(0x72, 0x4E54);
@@ -423,7 +423,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
 
   /* Write softStart */
-  if (config.softStart != HitecDServoConfig::defaultSoftStart) {
+  if (config.softStart != HitecDSettings::defaultSoftStart) {
     /* Note, we omit the softStart=20 case because it's the factory default. */
     if (config.softStart == 40) {
       writeRawRegister(0x60, 0x0003);
@@ -442,7 +442,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   correct default values.) */
   if (config.rawAngleFor850 != -1 &&
       config.rawAngleFor850 !=
-        HitecDServoConfig::defaultRawAngleFor850(modelNumber)) {
+        HitecDSettings::defaultRawAngleFor850(modelNumber)) {
     writeRawRegister(0xB2, config.rawAngleFor850);
     rawAngleFor850 = config.rawAngleFor850;
   } else {
@@ -453,7 +453,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
   if (config.rawAngleFor1500 != -1 &&
       config.rawAngleFor1500 !=
-        HitecDServoConfig::defaultRawAngleFor1500(modelNumber)) {
+        HitecDSettings::defaultRawAngleFor1500(modelNumber)) {
     writeRawRegister(0xC2, config.rawAngleFor1500);
     rawAngleFor1500 = config.rawAngleFor1500;
   } else {
@@ -464,7 +464,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
   if (config.rawAngleFor2150 != -1 &&
       config.rawAngleFor2150 !=
-        HitecDServoConfig::defaultRawAngleFor2150(modelNumber)) {
+        HitecDSettings::defaultRawAngleFor2150(modelNumber)) {
     writeRawRegister(0xB0, config.rawAngleFor2150);
     rawAngleFor2150 = config.rawAngleFor2150;
   } else {
@@ -475,20 +475,20 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */
-  if (config.failSafe != HitecDServoConfig::defaultFailSafe) {
+  if (config.failSafe != HitecDSettings::defaultFailSafe) {
     writeRawRegister(0x4C, config.failSafe);
-  } else if (config.failSafeLimp != HitecDServoConfig::defaultFailSafeLimp) {
+  } else if (config.failSafeLimp != HitecDSettings::defaultFailSafeLimp) {
     writeRawRegister(0x4C, 0x0000);
   }
 
   /* Write powerLimit */
-  if (config.powerLimit != HitecDServoConfig::defaultPowerLimit) {
+  if (config.powerLimit != HitecDSettings::defaultPowerLimit) {
     writeRawRegister(0x56, config.powerLimit * 20);
   }
 
   /* Write overloadProtection */
   if (config.overloadProtection !=
-      HitecDServoConfig::defaultOverloadProtection) {
+      HitecDSettings::defaultOverloadProtection) {
     writeRawRegister(0x9C, config.overloadProtection);
   }
 
@@ -513,7 +513,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
 
   /* Write sensitivityRatio */
-  if (config.sensitivityRatio != HitecDServoConfig::defaultSensitivityRatio) {
+  if (config.sensitivityRatio != HitecDSettings::defaultSensitivityRatio) {
     writeRawRegister(0x64, config.sensitivityRatio);
   }
 

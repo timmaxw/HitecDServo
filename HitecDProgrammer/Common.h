@@ -5,7 +5,7 @@
 
 extern HitecDServo servo;
 extern int modelNumber;
-extern HitecDServoConfig config;
+extern HitecDSettings config;
 extern bool allowUnsupportedModel;
 
 void printErr(int res, bool needReset);

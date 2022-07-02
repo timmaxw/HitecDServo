@@ -51,7 +51,7 @@ void printConfig() {
 
   Serial.print(F("  ID: "));
   printValueWithDefault(config.id,
-    HitecDServoConfig::defaultId);
+    HitecDSettings::defaultId);
 
   Serial.print(F("  Direction: "));
   if (config.counterclockwise) {
@@ -62,27 +62,27 @@ void printConfig() {
 
   Serial.print(F("  Speed: "));
   printValueWithDefault(config.speed,
-    HitecDServoConfig::defaultSpeed);
+    HitecDSettings::defaultSpeed);
 
   Serial.print(F("  Deadband: "));
   printValueWithDefault(config.deadband,
-    HitecDServoConfig::defaultDeadband);
+    HitecDSettings::defaultDeadband);
 
   Serial.print(F("  Soft start: "));
   printValueWithDefault(config.softStart,
-    HitecDServoConfig::defaultSoftStart);
+    HitecDSettings::defaultSoftStart);
 
   Serial.print(F("  Raw angle for 850us PWM (left endpoint): "));
   printValueWithDefault(config.rawAngleFor850,
-    HitecDServoConfig::defaultRawAngleFor850(modelNumber));
+    HitecDSettings::defaultRawAngleFor850(modelNumber));
 
   Serial.print(F("  Raw angle for 1500us PWM (center point): "));
   printValueWithDefault(config.rawAngleFor1500,
-    HitecDServoConfig::defaultRawAngleFor1500(modelNumber));
+    HitecDSettings::defaultRawAngleFor1500(modelNumber));
 
   Serial.print(F("  Raw angle for 2150us PWM (right endpoint): "));
   printValueWithDefault(config.rawAngleFor2150,
-    HitecDServoConfig::defaultRawAngleFor2150(modelNumber));
+    HitecDSettings::defaultRawAngleFor2150(modelNumber));
 
   Serial.print(F("  Fail safe: "));
   if (config.failSafe) {
@@ -96,7 +96,7 @@ void printConfig() {
 
   Serial.print(F("  Power limit: "));
   printValueWithDefault(config.powerLimit,
-    HitecDServoConfig::defaultPowerLimit);
+    HitecDSettings::defaultPowerLimit);
 
   Serial.print(F("  Overload protection: "));
   if (config.overloadProtection < 100) {
@@ -115,13 +115,13 @@ void printConfig() {
 
   Serial.print(F("  Sensitivity ratio: "));
   printValueWithDefault(config.sensitivityRatio,
-    HitecDServoConfig::defaultSensitivityRatio);
+    HitecDSettings::defaultSensitivityRatio);
 }
 
 void changeIdSetting() {
   Serial.print(F("Current ID: "));
   printValueWithDefault(config.id,
-    HitecDServoConfig::defaultId);
+    HitecDSettings::defaultId);
 
   Serial.println(F("Enter new ID (or nothing to cancel):"));
 
@@ -192,7 +192,7 @@ cancel:
 void changeSpeedSetting() {
   Serial.print(F("Current speed: "));
   printValueWithDefault(config.speed,
-    HitecDServoConfig::defaultSpeed);
+    HitecDSettings::defaultSpeed);
 
   Serial.println(F(
     "Enter new speed from 10, 20, ... 100 (or nothing to cancel):"));
@@ -219,7 +219,7 @@ cancel:
 void changeDeadbandSetting() {
   Serial.print(F("Current deadband: "));
   printValueWithDefault(config.deadband,
-    HitecDServoConfig::defaultDeadband);
+    HitecDSettings::defaultDeadband);
 
   Serial.println(F(
     "Enter new deadband from 1, 2, ... 10 (or nothing to cancel):"));
@@ -246,7 +246,7 @@ cancel:
 void changeSoftStartSetting() {
   Serial.print(F("Current soft start: "));
   printValueWithDefault(config.softStart,
-    HitecDServoConfig::defaultSoftStart);
+    HitecDSettings::defaultSoftStart);
 
   Serial.println(F(
     "Enter new soft start from 20, 40, ... 100 (or nothing to cancel):"));
@@ -322,7 +322,7 @@ cancel:
 void changePowerLimitSetting() {
   Serial.print(F("Current power limit: "));
   printValueWithDefault(config.powerLimit,
-    HitecDServoConfig::defaultPowerLimit);
+    HitecDSettings::defaultPowerLimit);
 
   Serial.println(F(
     "Warning: Power limit is an undocumented setting, not supported by\r\n"
@@ -430,7 +430,7 @@ cancel:
 void changeSensitivityRatioSetting() {
   Serial.print(F("Current sensitivity ratio: "));
   printValueWithDefault(config.sensitivityRatio,
-    HitecDServoConfig::defaultSensitivityRatio);
+    HitecDSettings::defaultSensitivityRatio);
 
   if (config.smartSense) {
     Serial.println(F(
@@ -480,7 +480,7 @@ void resetSettingsToFactoryDefaults() {
     goto cancel;
   }
 
-  config = HitecDServoConfig();
+  config = HitecDSettings();
   writeConfig();
   printConfig();
   return;

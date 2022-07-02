@@ -38,14 +38,13 @@ can print this with Serial for debugging purposes. For example:
 */
 const char *hitecdErrToString(int err);
 
-/* TODO: rename config to settings? */
-struct HitecDServoConfig {
+struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.
 
   `rawAngleFor850`, `rawAngleFor1500`, and `rawAngleFor2150` will be set to -1;
   this isn't the factory-default value, but it will cause `writeConfig()` to
   keep the factory-default value. */
-  HitecDServoConfig();
+  HitecDSettings();
 
   /* `id` is an arbitrary number from 0 to 254. Intended for keeping track of
   multiple servos. No effect on servo behavior. */
@@ -198,19 +197,19 @@ public:
   bool isModelSupported();
 
   /* Retrieves the configuration from the servo. */
-  int readConfig(HitecDServoConfig *configOut);
+  int readConfig(HitecDSettings *configOut);
 
   /* Resets the servo to its factory-default configuration, then uploads the
   given configuration. Note: Right now, this only works for the D485HW model.
   Other models will return an error. */
-  int writeConfig(const HitecDServoConfig &config);
+  int writeConfig(const HitecDSettings &config);
 
   /* It's dangerous to change the configuration of a non-D485HW model; this
   hasn't been tested, and might damage the servo. If you're willing to take the
   risk, you can use writeConfigUnsupportedModelThisMightDamageTheServo() with
   allowUnsupportedModel=true to skip checking the servo model. */
   int writeConfigUnsupportedModelThisMightDamageTheServo(
-    const HitecDServoConfig &config,
+    const HitecDSettings &config,
     bool allowUnsupportedModel);
 
   /* Directly read/write registers on the servo. Don't use this unless you know

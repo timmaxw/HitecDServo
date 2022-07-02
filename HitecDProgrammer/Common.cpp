@@ -4,7 +4,7 @@
 
 HitecDServo servo;
 int modelNumber;
-HitecDServoConfig config;
+HitecDSettings config;
 bool allowUnsupportedModel = false;
 bool usingRangeMeasurementSettings = false;
 
