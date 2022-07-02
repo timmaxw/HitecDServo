@@ -33,4 +33,8 @@ bool parseWord(const char *word);
 parseNumber(). */
 bool scanNumber(int16_t *valOut, int flags = 0);
 
+/* scanYesNo() calls scanRawInput() and then returns true if it looks like "y"
+or "yes". */
+bool scanYesNo();
+
 #endif /* CommandLine_h */

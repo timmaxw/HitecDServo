@@ -13,8 +13,8 @@ void printSettings() {
   printDeadbandSetting();
   printSoftStartSetting();
   printRangeLeftAPVSetting();
-  printRangeCenterAPVSetting();
   printRangeRightAPVSetting();
+  printRangeCenterAPVSetting();
   printFailSafeSetting();
   printPowerLimitSetting();
   printOverloadProtectionSetting();

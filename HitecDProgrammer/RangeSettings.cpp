@@ -4,81 +4,10 @@
 #include "Common.h"
 #include "UnsupportedModel.h"
 
-int16_t measuredMinAPV = -1;
-int16_t measuredMaxAPV = -1;
-
-int16_t tentativeRangeLeftAPV;
-int16_t tentativeRangeCenterAPV;
-int16_t tentativeRangeRightAPV;
-
-void changeRangeAPVHelper(int16_t *tentativeAPVInOut) {
-  Serial.println(F("Enter new point as APV (or nothing to cancel)"));
-  int16_t newAPV;
-  if (!scanNumber(&newAPV)) {
-    goto cancel;
-  }
-  if (newAPV == *tentativeAPVInOut) {
-    goto cancel;
-  }
-  if (newAPV > 16383) {
-    Serial.println(F("Error: Invalid APV."));
-    goto cancel;
-  }
-
-  *tentativeAPVInOut = newAPV;
-  Serial.println(F(
-    "Tentatively changed range of motion. Use 'save' command to make this\r\n"
-    "change permanent."));
-  return;
-
-cancel:
-  Serial.println(F("Current range of motion will be kept."));
-}
-
 void printRangeLeftAPVSetting() {
   Serial.print(F("Current left endpoint of range, as APV: "));
   printValueWithDefault(settings.rangeLeftAPV,
     HitecDSettings::defaultRangeLeftAPV(modelNumber));
-}
-
-void changeRangeLeftAPVSetting() {
-  if (tentativeRangeLeftAPV == settings.rangeLeftAPV) {
-    Serial.print(F("Current left endpoint of range, as APV: "));
-  } else {
-    Serial.print(F("Tentative left endpoint of range, as APV: "));
-  }
-  printValueWithDefault(tentativeRangeLeftAPV,
-    HitecDSettings::defaultRangeLeftAPV(modelNumber));
-  if (measuredMinAPV != -1) {
-    Serial.print(F("Measured minimum APV for your servo: "));
-    Serial.println(measuredMinAPV);
-  } else {
-    int16_t safeMinAPV = HitecDSettings::safeMinAPV(modelNumber);
-    if (safeMinAPV != -1) {
-      Serial.print(F("Safe minimum APV for your servo: "));
-      Serial.println(safeMinAPV);
-    }
-  }
-
-  changeRangeAPVHelper(&tentativeRangeLeftAPV);
-}
-
-void printRangeCenterAPVSetting() {
-  Serial.print(F("Current center point of range, as APV: "));
-  printValueWithDefault(settings.rangeCenterAPV,
-    HitecDSettings::defaultRangeCenterAPV(modelNumber));
-}
-
-void changeRangeCenterAPVSetting() {
-  if (tentativeRangeCenterAPV == settings.rangeCenterAPV) {
-    Serial.print(F("Current center point of range, as APV: "));
-  } else {
-    Serial.print(F("Tentative center point of range, as APV: "));
-  }
-  printValueWithDefault(tentativeRangeCenterAPV,
-    HitecDSettings::defaultRangeCenterAPV(modelNumber));
-
-  changeRangeAPVHelper(&tentativeRangeCenterAPV);
 }
 
 void printRangeRightAPVSetting() {
@@ -87,69 +16,248 @@ void printRangeRightAPVSetting() {
     HitecDSettings::defaultRangeRightAPV(modelNumber));
 }
 
-void changeRangeRightAPVSetting() {
-  if (tentativeRangeRightAPV == settings.rangeRightAPV) {
-    Serial.print(F("Current right endpoint of range, as APV: "));
-  } else {
-    Serial.print(F("Tentative right endpoint of range, as APV: "));
-  }
-  printValueWithDefault(tentativeRangeRightAPV,
-    HitecDSettings::defaultRangeRightAPV(modelNumber));
-  if (measuredMaxAPV != -1) {
-    Serial.print(F("Measured maximum for your servo: "));
-    Serial.println(measuredMaxAPV);
-  } else {
-    int16_t safeMaxAPV = HitecDSettings::safeMaxAPV(modelNumber);
-    if (safeMaxAPV != -1) {
-      Serial.print(F("Safe maximum for your servo: "));
-      Serial.println(safeMaxAPV);
-    }
-  }
-
-  changeRangeAPVHelper(&tentativeRangeRightAPV);
+void printRangeCenterAPVSetting() {
+  Serial.print(F("Current center point of range, as APV: "));
+  printValueWithDefault(settings.rangeCenterAPV,
+    HitecDSettings::defaultRangeCenterAPV(modelNumber));
 }
 
-void temporarilyMoveToAPVAndPrint(int16_t targetAPV) {
-  Serial.println(F("Moving..."));
-  int16_t actualAPV;
-  temporarilyMoveToAPV(targetAPV, &actualAPV);
-  Serial.print(F("The APV the servo actually reached was: "));
-  Serial.println(actualAPV);
-}
+bool changeRangeSettingsDetect(); // forward declaration
 
-bool saveRangeSettings() {
-  if (tentativeRangeLeftAPV > tentativeRangeCenterAPV) {
-    Serial.println(F(
-      "Error: Left endpoint must be less than center point."));
-    return false;
-  }
-  if (tentativeRangeRightAPV < tentativeRangeCenterAPV) {
-    Serial.println(F(
-      "Error: Right endpoint must be greater than center point."));
+bool changeRangeSettingsDefault() {
+  printRangeLeftAPVSetting();
+  printRangeRightAPVSetting();
+  printRangeCenterAPVSetting();
+
+  Serial.println(F(
+    "Change range settings to defaults? Enter \"y\" or \"n\":"));
+  if (!scanYesNo()) {
     return false;
   }
 
-  settings.rangeLeftAPV = tentativeRangeLeftAPV;
-  settings.rangeCenterAPV = tentativeRangeCenterAPV;
-  settings.rangeRightAPV = tentativeRangeRightAPV;
+  settings.rangeLeftAPV = -1;
+  settings.rangeRightAPV = -1;
+  settings.rangeCenterAPV = -1;
   writeSettings();
   return true;
 }
 
-void printRangeSettingsHelp() {
-  Serial.println(F("Available commands for setting range of motion:"));
+bool changeRangeSettingsWidest() {
+  int16_t left = HitecDSettings::widestRangeLeftAPV(modelNumber);
+  int16_t right = HitecDSettings::widestRangeRightAPV(modelNumber);
+  int16_t center = HitecDSettings::widestRangeCenterAPV(modelNumber);
+  if (left == -1 || right == -1 || center == -1) {
+    Serial.println(F(
+      "Error: The HitecDServo library does not know the widest range for\r\n"
+      "your servo model. Do you want to detect how far the servo can move\r\n"
+      "and use that range? Enter \"y\" or \"n\":"));
+    if (scanYesNo()) {
+      return changeRangeSettingsDetect();
+    } else {
+      return false;
+    }
+  }
+
+  printRangeLeftAPVSetting();
+  Serial.print(F("Widest range left endpoint, as APV: "));
+  Serial.println(left);
+
+  printRangeRightAPVSetting();
+  Serial.print(F("Widest range right endpoint, as APV: "));
+  Serial.println(right);
+
+  printRangeCenterAPVSetting();
+  Serial.print(F("Widest range center point, as APV: "));
+  Serial.println(center);
+
+  Serial.println(F("Change to widest range? Enter \"y\" or \"n\":"));
+  if (!scanYesNo()) {
+    return false;
+  }
+
+  settings.rangeLeftAPV = left;
+  settings.rangeRightAPV = right;
+  settings.rangeCenterAPV = center;
+  writeSettings();
+  return true;
+}
+
+bool changeRangeSettingsDetect() {
   Serial.println(F(
-    "  left        - Change left endpoint setting"));
+    "Servo will move as far as possible in each direction. When you are\r\n"
+    "ready, enter \"y\" to continue (or \"n\" to cancel):"));
+  if (!scanYesNo()) {
+    return false;
+  }
+
+  useRangeMeasurementSettings();
+  int16_t left, right, center;
+  Serial.println(F("Moving left as far as possible..."));
+  temporarilyMoveToAPV(50, &left);
+  Serial.println(F("Moving right as far as possible..."));
+  temporarilyMoveToAPV(16333, &right);
+  center = (left + right) / 2;
+
+  printRangeLeftAPVSetting();
+  Serial.print(F("Detected left limit, as APV: "));
+  Serial.println(left);
+
+  printRangeRightAPVSetting();
+  Serial.print(F("Detected right limit, as APV: "));
+  Serial.println(right);
+
+  printRangeCenterAPVSetting();
+  Serial.print(F("Center of detected limits, as APV: "));
+  Serial.println(center);
+
   Serial.println(F(
-    "  center      - Change center point setting"));
+    "Change range settings to detected limits? Enter \"y\" or \"n\":"));
+  if (!scanYesNo()) {
+    return false;
+  }
+
+  settings.rangeLeftAPV = left;
+  settings.rangeRightAPV = right;
+  settings.rangeCenterAPV = center;
+  writeSettings();
+  return true;
+}
+
+bool saveRangeSettings(int16_t left, int16_t right, int16_t center) {
+  if ((center < left && center < right) ||
+      (center > left && center > right)) {
+    Serial.println(F(
+      "Error: Center point must be between left and right endpoints."));
+    return false;
+  }
+  if (left <= right) {
+    settings.rangeLeftAPV = left;
+    settings.rangeRightAPV = right;
+  } else {
+    Serial.println(F("Warning: Left and right endpoints will be swapped."));
+    settings.rangeLeftAPV = right;
+    settings.rangeRightAPV = left;
+  }
+  settings.rangeCenterAPV = center;
+  writeSettings();
+  return true;
+}
+
+void printRangeSettingsInteractiveHelp() {
   Serial.println(F(
-    "  right       - Change right endpoint setting"));
+    "Available commands for interactively setting range of motion:"));
   Serial.println(F(
-    "  <number>    - Temporarily tell servo to move to arbitrary APV"));
+    "  <number>    - Tell servo to move to arbitrary APV, from 0 to 16383"));
   Serial.println(F(
-    "  save        - Save changes and return to main menu"));
+    "  left        - Change left endpoint to current servo position"));
   Serial.println(F(
-    "  cancel      - Cancel changes and return to main menu")); 
+    "  right       - Change right endpoint to current servo position"));
+  Serial.println(F(
+    "  center      - Change center point to current servo position"));
+  Serial.println(F(
+    "  save        - Save changes and exit"));
+  Serial.println(F(
+    "  cancel      - Cancel changes and exit"));
+}
+
+bool changeRangeSettingsInteractive() {
+  printRangeLeftAPVSetting();
+  printRangeRightAPVSetting();
+  printRangeCenterAPVSetting();
+
+  int16_t left = settings.rangeLeftAPV;
+  int16_t right = settings.rangeCenterAPV;
+  int16_t center = settings.rangeRightAPV;
+
+  printRangeSettingsInteractiveHelp();
+
+  int16_t actualAPV = servo.readCurrentAPV();
+
+  while (true) {
+    Serial.println(F("Enter a command for setting range of motion:"));
+    scanRawInput();
+    if (rawInput[0] >= '0' && rawInput[0] <= '9') {
+      int16_t targetAPV;
+      if (!parseNumber(&targetAPV)) {
+        continue;
+      }
+      useRangeMeasurementSettings();
+      Serial.println(F("Moving..."));
+      temporarilyMoveToAPV(targetAPV, &actualAPV);
+      Serial.print(F("The APV the servo actually reached was: "));
+      Serial.println(actualAPV);
+
+    } else if (parseWord("left")) {
+      left = actualAPV;
+      Serial.print(F("New range left endpoint will be "));
+      Serial.println(left);
+
+    } else if (parseWord("right")) {
+      right = actualAPV;
+      Serial.print(F("New range right endpoint will be "));
+      Serial.println(right);
+
+    } else if (parseWord("center")) {
+      center = actualAPV;
+      Serial.print(F("New range center point will be "));
+      Serial.println(center);
+
+    } else if (parseWord("save")) {
+      if (saveRangeSettings(left, right, center)) {
+        return true;
+      }
+
+    } else if (parseWord("cancel")) {
+      return false;
+
+    } else {
+      Serial.println(F("Error: What you entered is not a valid command."));
+      printRangeSettingsInteractiveHelp();
+    }
+  }
+}
+
+bool changeRangeSettingsAPVHelper(int16_t *newAPVOut) {
+  scanRawInput();
+  if (rawInputLen == 0) {
+    Serial.println(F("Current value will be kept."));
+    return true;
+  }
+  if (!parseNumber(newAPVOut)) {
+    return false;
+  }
+  if (*newAPVOut > 16383) {
+    Serial.println(F("Error: Invalid APV."));
+    return false;
+  }
+}
+
+bool changeRangeSettingsAPV() {
+  printRangeLeftAPVSetting();
+  Serial.println(F(
+    "Enter new left endpoint, as APV (or nothing to keep same):"));
+  int16_t left = settings.rangeLeftAPV;
+  if (!changeRangeSettingsAPVHelper(&left)) {
+    return false;
+  }
+
+  printRangeRightAPVSetting();
+  Serial.println(F(
+    "Enter new right endpoint, as APV (or nothing to keep same):"));
+  int16_t right = settings.rangeRightAPV;
+  if (!changeRangeSettingsAPVHelper(&right)) {
+    return false;
+  }
+
+  printRangeCenterAPVSetting();
+  Serial.println(F(
+    "Enter new center point, as APV (or nothing to keep same):"));
+  int16_t center = settings.rangeCenterAPV;
+  if (!changeRangeSettingsAPVHelper(&center)) {
+    return false;
+  }
+
+  return saveRangeSettings(left, right, center);
 }
 
 void changeRangeSettings() {
@@ -157,41 +265,50 @@ void changeRangeSettings() {
     goto cancel;
   }
 
-  tentativeRangeLeftAPV = settings.rangeLeftAPV;
-  tentativeRangeCenterAPV = settings.rangeCenterAPV;
-  tentativeRangeRightAPV = settings.rangeRightAPV;
+  Serial.println(F(
+    "How do you want to choose the new range settings? Enter one of:"));
+  Serial.println(F(
+    "  default     - Change range to the factory default"));
+  Serial.println(F(
+    "  widest      - Change range to be as wide as possible"));
+  Serial.println(F(
+    "  detect      - Detect how far the servo can move, and use that range"));
+  Serial.println(F(
+    "  interactive - Change range by moving servo until it looks right"));
+  Serial.println(F(
+    "  apv         - Change range to specific APV numbers you type in"));
 
-  printRangeSettingsHelp();
-
-  while (true) {
-    Serial.println(F("Enter a command for setting range of motion:"));
-    scanRawInput();
-    if (parseWord("left")) {
-      changeRangeLeftAPVSetting();
-    } else if (parseWord("center")) {
-      changeRangeCenterAPVSetting();
-    } else if (parseWord("right")) {
-      changeRangeRightAPVSetting();
-    } else if (rawInput[0] >= '0' && rawInput[0] <= '9') {
-      int16_t targetAPV;
-      if (!parseNumber(&targetAPV)) {
-        continue;
-      }
-      temporarilyMoveToAPVAndPrint(targetAPV);
-    } else if (parseWord("save")) {
-      if (saveRangeSettings()) {
-        return;
-      }
-    } else if (parseWord("cancel")) {
+  scanRawInput();
+  if (parseWord("default")) {
+    if (!changeRangeSettingsDefault()) {
       goto cancel;
-    } else {
-      Serial.println(F("Error: What you entered is not a valid command."));
-      printRangeSettingsHelp();
     }
+  } else if (parseWord("widest")) {
+    if (!changeRangeSettingsWidest()) {
+      goto cancel;
+    }
+  } else if (parseWord("detect")) {
+    if (!changeRangeSettingsDetect()) {
+      goto cancel;
+    }
+  } else if (parseWord("interactive")) {
+    if (!changeRangeSettingsInteractive()) {
+      goto cancel;
+    }
+  } else if (parseWord("apv")) {
+    if (!changeRangeSettingsAPV()) {
+      goto cancel;
+    }
+  } else if (rawInputLen == 0) {
+    goto cancel;
+  } else {
+    Serial.println(F("Error: What you entered is not a valid option."));
+    goto cancel;
   }
+  return;
 
 cancel:
-  Serial.println(F("Previous range of motion settings will be kept."));
+  Serial.println(F("Current range settings will not be changed."));
   undoRangeMeasurementSettings();
 }
 

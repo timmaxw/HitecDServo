@@ -137,3 +137,14 @@ bool parseWord(const char *word) {
   return (rawInputLen == i);
 }
 
+bool scanYesNo() {
+  scanRawInput();
+  if (parseWord("y") || parseWord("yes")) {
+    return true;
+  } else if (rawInputLen == 0 || parseWord("n") || parseWord("no")) {
+    return false;
+  } else {
+    Serial.println(F("Error: You did not enter \"y\" or \"n\"."));
+    return false;
+  }
+}

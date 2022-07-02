@@ -46,13 +46,6 @@ int16_t HitecDSettings::defaultRangeLeftAPV(int modelNumber) {
   }
 }
 
-int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
-  switch (modelNumber) {
-    case 485: return 8192;
-    default: return -1;
-  }
-}
-
 int16_t HitecDSettings::defaultRangeRightAPV(int modelNumber) {
   switch (modelNumber) {
     case 485: return 13002;
@@ -60,7 +53,14 @@ int16_t HitecDSettings::defaultRangeRightAPV(int modelNumber) {
   }
 }
 
-int16_t HitecDSettings::safeMinAPV(int modelNumber) {
+int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
+  switch (modelNumber) {
+    case 485: return 8192;
+    default: return -1;
+  }
+}
+
+int16_t HitecDSettings::widestRangeLeftAPV(int modelNumber) {
   switch (modelNumber) {
     /* I measured 731, and added +50 as a margin of error */
     case 485: return 731 + 50;
@@ -68,12 +68,19 @@ int16_t HitecDSettings::safeMinAPV(int modelNumber) {
   }
 }
 
-int16_t HitecDSettings::safeMaxAPV(int modelNumber) {
-  int16_t min = safeMinAPV(modelNumber);
+int16_t HitecDSettings::widestRangeRightAPV(int modelNumber) {
+  int16_t min = widestRangeLeftAPV(modelNumber);
   if (min == -1) {
     return -1;
   }
   return 0x3FFF - min;
+}
+
+int16_t HitecDSettings::widestRangeCenterAPV(int modelNumber) {
+  if (widestRangeLeftAPV(modelNumber) == -1) {
+    return -1;
+  }
+  return 8192;
 }
 
 HitecDServo::HitecDServo() : pin(-1) { }

@@ -88,7 +88,7 @@ struct HitecDSettings {
   int8_t softStart;
   static const int8_t defaultSoftStart = 20;
 
-  /* `rangeLeftAPV`, `rangeCenterAPV` and `rangeRightAPV` define the servo's
+  /* `rangeLeftAPV`, `rangeRightAPV` and `rangeCenterAPV` define the servo's
   physical range of motion.
   
   Internally, the D-series servos measure the physical servo angle using a
@@ -111,21 +111,22 @@ struct HitecDSettings {
 
   If you call `writeSettings()` with `rangeLeftAPV`, `rangeRightAPV`, or
   `rangeCenterAPV` set to -1, then the factory-default value will be used. */
-  int16_t rangeLeftAPV, rangeCenterAPV, rangeRightAPV;
+  int16_t rangeLeftAPV, rangeRightAPV, rangeCenterAPV;
 
   /* Convenience functions to return the factory-default range APVs for the
   given servo model. Right now this only works for the D485HW; other models will
   return -1. */
   static int16_t defaultRangeLeftAPV(int modelNumber);
-  static int16_t defaultRangeCenterAPV(int modelNumber);
   static int16_t defaultRangeRightAPV(int modelNumber);
+  static int16_t defaultRangeCenterAPV(int modelNumber);
 
   /* Convenience functions to return the min/max APVs that the servo can be
   safely driven to without hitting physical stops. This may vary slightly from
   servo to servo; these are conservative values. Right now this only works for
   the D485HW; other models will return -1. */
-  static int16_t safeMinAPV(int modelNumber);
-  static int16_t safeMaxAPV(int modelNumber);
+  static int16_t widestRangeLeftAPV(int modelNumber);
+  static int16_t widestRangeRightAPV(int modelNumber);
+  static int16_t widestRangeCenterAPV(int modelNumber);
 
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
