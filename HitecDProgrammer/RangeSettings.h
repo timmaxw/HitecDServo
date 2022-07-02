@@ -3,6 +3,9 @@
 
 #include <HitecDServo.h>
 
+void printRangeLeftAPVSetting();
+void printRangeCenterAPVSetting();
+void printRangeRightAPVSetting();
 void changeRangeSettings();
 
 #endif /* RangeSettings_h */

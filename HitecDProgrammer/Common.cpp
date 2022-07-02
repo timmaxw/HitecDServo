@@ -57,7 +57,7 @@ bool checkSupportedModel() {
 
 void writeSettings() {
   int res;
-  Serial.println(F("Changing servo settings..."));
+  Serial.println(F("Saving new servo settings..."));
 
   /* Writing the settings starts by resetting the servo to factory settings,
   which will overwrite any range-measurement settings. */

@@ -34,7 +34,13 @@ cancel:
   Serial.println(F("Current range of motion will be kept."));
 }
 
-void changeRangeLeftAPV() {
+void printRangeLeftAPVSetting() {
+  Serial.print(F("Current left endpoint of range, as APV: "));
+  printValueWithDefault(settings.rangeLeftAPV,
+    HitecDSettings::defaultRangeLeftAPV(modelNumber));
+}
+
+void changeRangeLeftAPVSetting() {
   if (tentativeRangeLeftAPV == settings.rangeLeftAPV) {
     Serial.print(F("Current left endpoint of range, as APV: "));
   } else {
@@ -56,7 +62,13 @@ void changeRangeLeftAPV() {
   changeRangeAPVHelper(&tentativeRangeLeftAPV);
 }
 
-void changeRangeCenterAPV() {
+void printRangeCenterAPVSetting() {
+  Serial.print(F("Current center point of range, as APV: "));
+  printValueWithDefault(settings.rangeCenterAPV,
+    HitecDSettings::defaultRangeCenterAPV(modelNumber));
+}
+
+void changeRangeCenterAPVSetting() {
   if (tentativeRangeCenterAPV == settings.rangeCenterAPV) {
     Serial.print(F("Current center point of range, as APV: "));
   } else {
@@ -68,7 +80,13 @@ void changeRangeCenterAPV() {
   changeRangeAPVHelper(&tentativeRangeCenterAPV);
 }
 
-void changeRangeRightAPV() {
+void printRangeRightAPVSetting() {
+  Serial.print(F("Current right endpoint of range, as APV: "));
+  printValueWithDefault(settings.rangeRightAPV,
+    HitecDSettings::defaultRangeRightAPV(modelNumber));
+}
+
+void changeRangeRightAPVSetting() {
   if (tentativeRangeRightAPV == settings.rangeRightAPV) {
     Serial.print(F("Current right endpoint of range, as APV: "));
   } else {
@@ -148,11 +166,11 @@ void changeRangeSettings() {
     Serial.println(F("Enter a command for setting range of motion:"));
     scanRawInput();
     if (parseWord("left")) {
-      changeRangeLeftAPV();
+      changeRangeLeftAPVSetting();
     } else if (parseWord("center")) {
-      changeRangeCenterAPV();
+      changeRangeCenterAPVSetting();
     } else if (parseWord("right")) {
-      changeRangeRightAPV();
+      changeRangeRightAPVSetting();
     } else if (rawInput[0] >= '0' && rawInput[0] <= '9') {
       int16_t targetAPV;
       if (!parseNumber(&targetAPV)) {

@@ -3,10 +3,14 @@
 #include "CommandLine.h"
 #include "Common.h"
 
-void changeIdSetting() {
+void printIdSetting() {
   Serial.print(F("Current ID: "));
   printValueWithDefault(settings.id,
     HitecDSettings::defaultId);
+}
+
+void changeIdSetting() {
+  printIdSetting();
 
   Serial.println(F("Enter new ID (or nothing to cancel):"));
 
@@ -30,13 +34,17 @@ cancel:
   Serial.println(F("Current ID will be kept."));
 }
 
-void changeDirectionSetting() {
+void printDirectionSetting() {
   Serial.print(F("Current direction: "));
   if (settings.counterclockwise) {
     Serial.println(F("Counterclockwise (default is clockwise)"));
   } else {
     Serial.println(F("Clockwise (default)"));
   }
+}
+
+void changeDirectionSetting() {
+  printDirectionSetting();
 
   Serial.println(F(
     "Enter \"Clockwise\" or \"Counterclockwise\" (or nothing to cancel):"));
@@ -74,10 +82,14 @@ cancel:
   Serial.println(F("Current direction will be kept."));
 }
 
-void changeSpeedSetting() {
+void printSpeedSetting() {
   Serial.print(F("Current speed: "));
   printValueWithDefault(settings.speed,
     HitecDSettings::defaultSpeed);
+}
+
+void changeSpeedSetting() {
+  printSpeedSetting();
 
   Serial.println(F(
     "Enter new speed from 10, 20, ... 100 (or nothing to cancel):"));
@@ -101,10 +113,14 @@ cancel:
   Serial.println(F("Current speed will be kept."));
 }
 
-void changeDeadbandSetting() {
+void printDeadbandSetting() {
   Serial.print(F("Current deadband: "));
   printValueWithDefault(settings.deadband,
     HitecDSettings::defaultDeadband);
+}
+
+void changeDeadbandSetting() {
+  printDeadbandSetting();
 
   Serial.println(F(
     "Enter new deadband from 1, 2, ... 10 (or nothing to cancel):"));
@@ -128,10 +144,14 @@ cancel:
   Serial.println(F("Current deadband will be kept."));
 }
 
-void changeSoftStartSetting() {
+void printSoftStartSetting() {
   Serial.print(F("Current soft start: "));
   printValueWithDefault(settings.softStart,
     HitecDSettings::defaultSoftStart);
+}
+
+void changeSoftStartSetting() {
+  printSoftStartSetting();
 
   Serial.println(F(
     "Enter new soft start from 20, 40, ... 100 (or nothing to cancel):"));
@@ -155,7 +175,7 @@ cancel:
   Serial.println(F("Current soft start will be kept."));
 }
 
-void changeFailSafeSetting() {
+void printFailSafeSetting() {
   Serial.print(F("Current fail safe: "));
   if (settings.failSafe) {
     Serial.print(settings.failSafe);
@@ -165,6 +185,10 @@ void changeFailSafeSetting() {
   } else {
     Serial.println(F("Off (default)"));
   }
+}
+
+void changeFailSafeSetting() {
+  printFailSafeSetting();
 
   Serial.println(F(
     "Enter new fail safe point in microseconds; or \"Off\" or \"Limp\" (or\r\n"
@@ -204,10 +228,14 @@ cancel:
   Serial.println(F("Current fail safe will be kept."));
 }
 
-void changePowerLimitSetting() {
+void printPowerLimitSetting() {
   Serial.print(F("Current power limit: "));
   printValueWithDefault(settings.powerLimit,
     HitecDSettings::defaultPowerLimit);
+}
+
+void changePowerLimitSetting() {
+  printPowerLimitSetting();
 
   Serial.println(F(
     "Warning: Power limit is an undocumented setting, not supported by\r\n"
@@ -235,7 +263,7 @@ cancel:
   Serial.println(F("Current power limit will be kept."));
 }
 
-void changeOverloadProtectionSetting() {
+void printOverloadProtectionSetting() {
   Serial.print(F("Current overload protection: "));
   if (settings.overloadProtection < 100) {
     Serial.print(settings.overloadProtection);
@@ -243,6 +271,10 @@ void changeOverloadProtectionSetting() {
   } else {
     Serial.println(F("Off (default)"));
   }
+}
+
+void changeOverloadProtectionSetting() {
+  printOverloadProtectionSetting();
 
   Serial.println(F(
     "Enter new overload protection from 10, 20, ... 50; or \"Off\" (or\r\n"
@@ -276,13 +308,17 @@ cancel:
   Serial.println(F("Current overload protection will be kept."));
 }
 
-void changeSmartSenseSetting() {
+void printSmartSenseSetting() {
   Serial.print(F("Current smart sense: "));
   if (settings.smartSense) {
     Serial.println(F("On (default)"));
   } else {
     Serial.println(F("Off (default is On)"));
   }
+}
+
+void changeSmartSenseSetting() {
+  printSmartSenseSetting();
 
   Serial.println(F("Enter \"On\" or \"Off\" (or nothing to cancel):"));
   scanRawInput();
@@ -312,10 +348,14 @@ cancel:
   Serial.println(F("Current smart sense will be kept."));
 }
 
-void changeSensitivityRatioSetting() {
+void printSensitivityRatioSetting() {
   Serial.print(F("Current sensitivity ratio: "));
   printValueWithDefault(settings.sensitivityRatio,
     HitecDSettings::defaultSensitivityRatio);
+}
+
+void changeSensitivityRatioSetting() {
+  printSensitivityRatioSetting();
 
   if (settings.smartSense) {
     Serial.println(F(

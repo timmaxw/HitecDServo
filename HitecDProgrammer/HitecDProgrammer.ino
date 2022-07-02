@@ -48,80 +48,25 @@ void printRegisterDump() {
 }
 
 void printSettings() {
-  Serial.println(F("Servo settings:"));
-
-  Serial.print(F("  ID: "));
-  printValueWithDefault(settings.id,
-    HitecDSettings::defaultId);
-
-  Serial.print(F("  Direction: "));
-  if (settings.counterclockwise) {
-    Serial.println(F("Counterclockwise (default is clockwise)"));
-  } else {
-    Serial.println(F("Clockwise (default)"));
-  }
-
-  Serial.print(F("  Speed: "));
-  printValueWithDefault(settings.speed,
-    HitecDSettings::defaultSpeed);
-
-  Serial.print(F("  Deadband: "));
-  printValueWithDefault(settings.deadband,
-    HitecDSettings::defaultDeadband);
-
-  Serial.print(F("  Soft start: "));
-  printValueWithDefault(settings.softStart,
-    HitecDSettings::defaultSoftStart);
-
-  Serial.print(F("  Raw angle for 850us PWM (left endpoint): "));
-  printValueWithDefault(settings.rangeLeftAPV,
-    HitecDSettings::defaultRangeLeftAPV(modelNumber));
-
-  Serial.print(F("  Raw angle for 1500us PWM (center point): "));
-  printValueWithDefault(settings.rangeCenterAPV,
-    HitecDSettings::defaultRangeCenterAPV(modelNumber));
-
-  Serial.print(F("  Raw angle for 2150us PWM (right endpoint): "));
-  printValueWithDefault(settings.rangeRightAPV,
-    HitecDSettings::defaultRangeRightAPV(modelNumber));
-
-  Serial.print(F("  Fail safe: "));
-  if (settings.failSafe) {
-    Serial.print(settings.failSafe);
-    Serial.println(F(" (default is Off)"));
-  } else if (settings.failSafeLimp) {
-    Serial.println(F("Limp (default is Off)"));
-  } else {
-    Serial.println(F("Off (default)"));
-  }
-
-  Serial.print(F("  Power limit: "));
-  printValueWithDefault(settings.powerLimit,
-    HitecDSettings::defaultPowerLimit);
-
-  Serial.print(F("  Overload protection: "));
-  if (settings.overloadProtection < 100) {
-    Serial.print(settings.overloadProtection);
-    Serial.println(F(" (default is Off)"));
-  } else {
-    Serial.println(F("Off (default)"));
-  }
-
-  Serial.print(F("  Smart sense: "));
-  if (settings.smartSense) {
-    Serial.println(F("On (default)"));
-  } else {
-    Serial.println(F("Off (default is On)"));
-  }
-
-  Serial.print(F("  Sensitivity ratio: "));
-  printValueWithDefault(settings.sensitivityRatio,
-    HitecDSettings::defaultSensitivityRatio);
+  printIdSetting();
+  printDirectionSetting();
+  printSpeedSetting();
+  printDeadbandSetting();
+  printSoftStartSetting();
+  printRangeLeftAPVSetting();
+  printRangeCenterAPVSetting();
+  printRangeRightAPVSetting();
+  printFailSafeSetting();
+  printPowerLimitSetting();
+  printOverloadProtectionSetting();
+  printSmartSenseSetting();
+  printSensitivityRatioSetting();
 }
 
 void resetSettingsToFactoryDefaults() {
   /* Print a copy of the servo settings, so the user has a backup copy of the
   previous settings if they change their mind after resetting it. */
+  Serial.println(F("Current servo settings:"));
   printSettings();
 
   Serial.println(F(
@@ -141,7 +86,10 @@ void resetSettingsToFactoryDefaults() {
 
   settings = HitecDSettings();
   writeSettings();
+
+  Serial.println(F("New servo settings:"));
   printSettings();
+
   return;
 
 cancel:
@@ -237,6 +185,7 @@ void loop() {
   Serial.println(F("Enter a command:"));
   scanRawInput();
   if (parseWord("show")) {
+    Serial.println(F("Current servo settings:"));
     printSettings();
   } else if (parseWord("id")) {
     changeIdSetting();
