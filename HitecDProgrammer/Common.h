@@ -5,13 +5,13 @@
 
 extern HitecDServo servo;
 extern int modelNumber;
-extern HitecDSettings config;
+extern HitecDSettings settings;
 extern bool allowUnsupportedModel;
 
 void printErr(int res, bool needReset);
 void printValueWithDefault(int16_t value, int16_t defaultValue);
 bool checkSupportedModel();
-void writeConfig();
+void writeSettings();
 
 void useRangeMeasurementSettings();
 void undoRangeMeasurementSettings();

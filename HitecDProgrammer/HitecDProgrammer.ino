@@ -46,87 +46,87 @@ void printRegisterDump() {
   }
 }
 
-void printConfig() {
+void printSettings() {
   Serial.println(F("Servo settings:"));
 
   Serial.print(F("  ID: "));
-  printValueWithDefault(config.id,
+  printValueWithDefault(settings.id,
     HitecDSettings::defaultId);
 
   Serial.print(F("  Direction: "));
-  if (config.counterclockwise) {
+  if (settings.counterclockwise) {
     Serial.println(F("Counterclockwise (default is clockwise)"));
   } else {
     Serial.println(F("Clockwise (default)"));
   }
 
   Serial.print(F("  Speed: "));
-  printValueWithDefault(config.speed,
+  printValueWithDefault(settings.speed,
     HitecDSettings::defaultSpeed);
 
   Serial.print(F("  Deadband: "));
-  printValueWithDefault(config.deadband,
+  printValueWithDefault(settings.deadband,
     HitecDSettings::defaultDeadband);
 
   Serial.print(F("  Soft start: "));
-  printValueWithDefault(config.softStart,
+  printValueWithDefault(settings.softStart,
     HitecDSettings::defaultSoftStart);
 
   Serial.print(F("  Raw angle for 850us PWM (left endpoint): "));
-  printValueWithDefault(config.rawAngleFor850,
+  printValueWithDefault(settings.rawAngleFor850,
     HitecDSettings::defaultRawAngleFor850(modelNumber));
 
   Serial.print(F("  Raw angle for 1500us PWM (center point): "));
-  printValueWithDefault(config.rawAngleFor1500,
+  printValueWithDefault(settings.rawAngleFor1500,
     HitecDSettings::defaultRawAngleFor1500(modelNumber));
 
   Serial.print(F("  Raw angle for 2150us PWM (right endpoint): "));
-  printValueWithDefault(config.rawAngleFor2150,
+  printValueWithDefault(settings.rawAngleFor2150,
     HitecDSettings::defaultRawAngleFor2150(modelNumber));
 
   Serial.print(F("  Fail safe: "));
-  if (config.failSafe) {
-    Serial.print(config.failSafe);
+  if (settings.failSafe) {
+    Serial.print(settings.failSafe);
     Serial.println(F(" (default is Off)"));
-  } else if (config.failSafeLimp) {
+  } else if (settings.failSafeLimp) {
     Serial.println(F("Limp (default is Off)"));
   } else {
     Serial.println(F("Off (default)"));
   }
 
   Serial.print(F("  Power limit: "));
-  printValueWithDefault(config.powerLimit,
+  printValueWithDefault(settings.powerLimit,
     HitecDSettings::defaultPowerLimit);
 
   Serial.print(F("  Overload protection: "));
-  if (config.overloadProtection < 100) {
-    Serial.print(config.overloadProtection);
+  if (settings.overloadProtection < 100) {
+    Serial.print(settings.overloadProtection);
     Serial.println(F(" (default is Off)"));
   } else {
     Serial.println(F("Off (default)"));
   }
 
   Serial.print(F("  Smart sense: "));
-  if (config.smartSense) {
+  if (settings.smartSense) {
     Serial.println(F("On (default)"));
   } else {
     Serial.println(F("Off (default is On)"));
   }
 
   Serial.print(F("  Sensitivity ratio: "));
-  printValueWithDefault(config.sensitivityRatio,
+  printValueWithDefault(settings.sensitivityRatio,
     HitecDSettings::defaultSensitivityRatio);
 }
 
 void changeIdSetting() {
   Serial.print(F("Current ID: "));
-  printValueWithDefault(config.id,
+  printValueWithDefault(settings.id,
     HitecDSettings::defaultId);
 
   Serial.println(F("Enter new ID (or nothing to cancel):"));
 
   int16_t newId;
-  if (!scanNumber(&newId) || newId == config.id) {
+  if (!scanNumber(&newId) || newId == settings.id) {
     goto cancel;
   }
   if (newId < 0 || newId > 254) {
@@ -137,8 +137,8 @@ void changeIdSetting() {
     goto cancel;
   }
 
-  config.id = newId;
-  writeConfig();
+  settings.id = newId;
+  writeSettings();
   return;
 
 cancel:
@@ -147,7 +147,7 @@ cancel:
 
 void changeDirectionSetting() {
   Serial.print(F("Current direction: "));
-  if (config.counterclockwise) {
+  if (settings.counterclockwise) {
     Serial.println(F("Counterclockwise (default is clockwise)"));
   } else {
     Serial.println(F("Clockwise (default)"));
@@ -167,22 +167,22 @@ void changeDirectionSetting() {
     Serial.println(F("Error: Invalid direction."));
     goto cancel;
   }
-  if (newCounterclockwise == config.counterclockwise) {
+  if (newCounterclockwise == settings.counterclockwise) {
     goto cancel;
   }
   if (!checkSupportedModel()) {
     goto cancel;
   }
 
-  config.counterclockwise = newCounterclockwise;
-  int16_t prevRawAngleFor850 = config.rawAngleFor850;
-  int16_t prevRawAngleFor1500 = config.rawAngleFor1500;
-  int16_t prevRawAngleFor2150 = config.rawAngleFor2150;
-  config.rawAngleFor850 = 16383 - prevRawAngleFor2150;
-  config.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
-  config.rawAngleFor2150 = 16383 - prevRawAngleFor850;
+  settings.counterclockwise = newCounterclockwise;
+  int16_t prevRawAngleFor850 = settings.rawAngleFor850;
+  int16_t prevRawAngleFor1500 = settings.rawAngleFor1500;
+  int16_t prevRawAngleFor2150 = settings.rawAngleFor2150;
+  settings.rawAngleFor850 = 16383 - prevRawAngleFor2150;
+  settings.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
+  settings.rawAngleFor2150 = 16383 - prevRawAngleFor850;
   // TODO: Print new raw angles
-  writeConfig();
+  writeSettings();
   return;
 
 cancel:
@@ -191,13 +191,13 @@ cancel:
 
 void changeSpeedSetting() {
   Serial.print(F("Current speed: "));
-  printValueWithDefault(config.speed,
+  printValueWithDefault(settings.speed,
     HitecDSettings::defaultSpeed);
 
   Serial.println(F(
     "Enter new speed from 10, 20, ... 100 (or nothing to cancel):"));
   int16_t newSpeed;
-  if (!scanNumber(&newSpeed) || newSpeed == config.speed) {
+  if (!scanNumber(&newSpeed) || newSpeed == settings.speed) {
     goto cancel;
   }
   if (newSpeed < 10 || newSpeed > 100 || newSpeed % 10 != 0) {
@@ -208,8 +208,8 @@ void changeSpeedSetting() {
     goto cancel;
   }
 
-  config.speed = newSpeed;
-  writeConfig();
+  settings.speed = newSpeed;
+  writeSettings();
   return;
 
 cancel:
@@ -218,13 +218,13 @@ cancel:
 
 void changeDeadbandSetting() {
   Serial.print(F("Current deadband: "));
-  printValueWithDefault(config.deadband,
+  printValueWithDefault(settings.deadband,
     HitecDSettings::defaultDeadband);
 
   Serial.println(F(
     "Enter new deadband from 1, 2, ... 10 (or nothing to cancel):"));
   int16_t newDeadband;
-  if (!scanNumber(&newDeadband) || newDeadband == config.deadband) {
+  if (!scanNumber(&newDeadband) || newDeadband == settings.deadband) {
     goto cancel;
   }
   if (newDeadband < 1 || newDeadband > 10) {
@@ -235,8 +235,8 @@ void changeDeadbandSetting() {
     goto cancel;
   }
 
-  config.deadband = newDeadband;
-  writeConfig();
+  settings.deadband = newDeadband;
+  writeSettings();
   return;
 
 cancel:
@@ -245,13 +245,13 @@ cancel:
 
 void changeSoftStartSetting() {
   Serial.print(F("Current soft start: "));
-  printValueWithDefault(config.softStart,
+  printValueWithDefault(settings.softStart,
     HitecDSettings::defaultSoftStart);
 
   Serial.println(F(
     "Enter new soft start from 20, 40, ... 100 (or nothing to cancel):"));
   int16_t newSoftStart;
-  if (!scanNumber(&newSoftStart) || newSoftStart == config.softStart) {
+  if (!scanNumber(&newSoftStart) || newSoftStart == settings.softStart) {
     goto cancel;
   }
   if (newSoftStart < 20 || newSoftStart > 100 || newSoftStart % 20 != 0) {
@@ -262,8 +262,8 @@ void changeSoftStartSetting() {
     goto cancel;
   }
 
-  config.softStart = newSoftStart;
-  writeConfig();
+  settings.softStart = newSoftStart;
+  writeSettings();
   return;
 
 cancel:
@@ -272,10 +272,10 @@ cancel:
 
 void changeFailSafeSetting() {
   Serial.print(F("Current fail safe: "));
-  if (config.failSafe) {
-    Serial.print(config.failSafe);
+  if (settings.failSafe) {
+    Serial.print(settings.failSafe);
     Serial.println(F(" (default is Off)"));
-  } else if (config.failSafeLimp) {
+  } else if (settings.failSafeLimp) {
     Serial.println(F("Limp (default is Off)"));
   } else {
     Serial.println(F("Off (default)"));
@@ -302,17 +302,17 @@ void changeFailSafeSetting() {
   } else {
     goto cancel;
   }
-  if (newFailSafe == config.failSafe &&
-      newFailSafeLimp == config.failSafeLimp) {
+  if (newFailSafe == settings.failSafe &&
+      newFailSafeLimp == settings.failSafeLimp) {
     goto cancel;
   }
   if (!checkSupportedModel()) {
     goto cancel;
   }
 
-  config.failSafe = newFailSafe;
-  config.failSafeLimp = newFailSafeLimp;
-  writeConfig();
+  settings.failSafe = newFailSafe;
+  settings.failSafeLimp = newFailSafeLimp;
+  writeSettings();
   return;
 
 cancel:
@@ -321,7 +321,7 @@ cancel:
 
 void changePowerLimitSetting() {
   Serial.print(F("Current power limit: "));
-  printValueWithDefault(config.powerLimit,
+  printValueWithDefault(settings.powerLimit,
     HitecDSettings::defaultPowerLimit);
 
   Serial.println(F(
@@ -331,7 +331,7 @@ void changePowerLimitSetting() {
   Serial.println(F(
     "Enter new power limit from 0 to 100 (or nothing to cancel):"));
   int16_t newPowerLimit;
-  if (!scanNumber(&newPowerLimit) || newPowerLimit == config.powerLimit) {
+  if (!scanNumber(&newPowerLimit) || newPowerLimit == settings.powerLimit) {
     goto cancel;
   }
   if (newPowerLimit < 0 || newPowerLimit > 100) {
@@ -342,8 +342,8 @@ void changePowerLimitSetting() {
     goto cancel;
   }
 
-  config.powerLimit = newPowerLimit;
-  writeConfig();
+  settings.powerLimit = newPowerLimit;
+  writeSettings();
   return;
 
 cancel:
@@ -352,8 +352,8 @@ cancel:
 
 void changeOverloadProtectionSetting() {
   Serial.print(F("Current overload protection: "));
-  if (config.overloadProtection < 100) {
-    Serial.print(config.overloadProtection);
+  if (settings.overloadProtection < 100) {
+    Serial.print(settings.overloadProtection);
     Serial.println(F(" (default is Off)"));
   } else {
     Serial.println(F("Off (default)"));
@@ -376,15 +376,15 @@ void changeOverloadProtectionSetting() {
   } else {
     goto cancel;
   }
-  if (newOverloadProtection == config.overloadProtection) {
+  if (newOverloadProtection == settings.overloadProtection) {
     goto cancel;
   }
   if (!checkSupportedModel()) {
     goto cancel;
   }
 
-  config.overloadProtection = newOverloadProtection;
-  writeConfig();
+  settings.overloadProtection = newOverloadProtection;
+  writeSettings();
   return;
 
 cancel:
@@ -393,7 +393,7 @@ cancel:
 
 void changeSmartSenseSetting() {
   Serial.print(F("Current smart sense: "));
-  if (config.smartSense) {
+  if (settings.smartSense) {
     Serial.println(F("On (default)"));
   } else {
     Serial.println(F("Off (default is On)"));
@@ -412,15 +412,15 @@ void changeSmartSenseSetting() {
     Serial.println(F("Error: You did not enter \"On\" or \"Off\"."));
     goto cancel;
   }
-  if (newSmartSense == config.smartSense) {
+  if (newSmartSense == settings.smartSense) {
     goto cancel;
   }
   if (!checkSupportedModel()) {
     goto cancel;
   }
 
-  config.smartSense = newSmartSense;
-  writeConfig();
+  settings.smartSense = newSmartSense;
+  writeSettings();
   return;
 
 cancel:
@@ -429,10 +429,10 @@ cancel:
 
 void changeSensitivityRatioSetting() {
   Serial.print(F("Current sensitivity ratio: "));
-  printValueWithDefault(config.sensitivityRatio,
+  printValueWithDefault(settings.sensitivityRatio,
     HitecDSettings::defaultSensitivityRatio);
 
-  if (config.smartSense) {
+  if (settings.smartSense) {
     Serial.println(F(
       "Warning: Sensitivity ratio has no effect if smart sense is on."));
   }
@@ -441,7 +441,7 @@ void changeSensitivityRatioSetting() {
     "Enter new sensitivity ratio from 819 to 4095 (or nothing to cancel):"));
   int16_t newSensitivityRatio;
   if (!scanNumber(&newSensitivityRatio) ||
-      newSensitivityRatio == config.sensitivityRatio) {
+      newSensitivityRatio == settings.sensitivityRatio) {
     goto cancel;
   }
   if (newSensitivityRatio < 819 || newSensitivityRatio > 4095) {
@@ -452,8 +452,8 @@ void changeSensitivityRatioSetting() {
     goto cancel;
   }
 
-  config.sensitivityRatio = newSensitivityRatio;
-  writeConfig();
+  settings.sensitivityRatio = newSensitivityRatio;
+  writeSettings();
   return;
 
 cancel:
@@ -461,9 +461,9 @@ cancel:
 }
 
 void resetSettingsToFactoryDefaults() {
-  /* Print a copy of the servo config, so the user has a backup copy of the
-  previous config if they change their mind after resetting it. */
-  printConfig();
+  /* Print a copy of the servo settings, so the user has a backup copy of the
+  previous settings if they change their mind after resetting it. */
+  printSettings();
 
   Serial.println(F(
     "Reset all settings to factory defaults? Enter \"Yes\" or \"No\":"));
@@ -480,9 +480,9 @@ void resetSettingsToFactoryDefaults() {
     goto cancel;
   }
 
-  config = HitecDSettings();
-  writeConfig();
-  printConfig();
+  settings = HitecDSettings();
+  writeSettings();
+  printSettings();
   return;
 
 cancel:
@@ -530,10 +530,10 @@ void setup() {
     ));
   }
 
-  if ((res = servo.readConfig(&config)) < 0) {
+  if ((res = servo.readSettings(&settings)) < 0) {
     printErr(res, true);
   }
-  printConfig();
+  printSettings();
 
   Serial.println(F(
     "===================================================================="));
@@ -578,7 +578,7 @@ void loop() {
   Serial.println(F("Enter a command:"));
   scanRawInput();
   if (parseWord("show")) {
-    printConfig();
+    printSettings();
   } else if (parseWord("id")) {
     changeIdSetting();
   } else if (parseWord("direction")) {

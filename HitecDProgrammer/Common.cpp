@@ -4,7 +4,7 @@
 
 HitecDServo servo;
 int modelNumber;
-HitecDSettings config;
+HitecDSettings settings;
 bool allowUnsupportedModel = false;
 bool usingRangeMeasurementSettings = false;
 
@@ -55,16 +55,16 @@ bool checkSupportedModel() {
   }
 }
 
-void writeConfig() {
+void writeSettings() {
   int res;
-  Serial.println(F("Changing servo config..."));
+  Serial.println(F("Changing servo settings..."));
 
-  /* Writing the config starts by resetting the servo to factory settings,
+  /* Writing the settings starts by resetting the servo to factory settings,
   which will overwrite any range-measurement settings. */
   usingRangeMeasurementSettings = false;
 
-  res = servo.writeConfigUnsupportedModelThisMightDamageTheServo(
-    config,
+  res = servo.writeSettingsUnsupportedModelThisMightDamageTheServo(
+    settings,
     allowUnsupportedModel
   );
   if (res != HITECD_OK) {
@@ -72,14 +72,14 @@ void writeConfig() {
   }
 
   /* Read back the settings to make sure we have the latest values. */
-  if ((res = servo.readConfig(&config)) != HITECD_OK) {
+  if ((res = servo.readSettings(&settings)) != HITECD_OK) {
     printErr(res, true);
   }
 
   Serial.println(F("Done."));
 }
 
-/* When moving to temp raw angles, temporarily overwrite the servo config by
+/* When moving to temp raw angles, temporarily overwrite the servo settings by
 moving the endpoints beyond the physical limits that the servo can actually
 reach; but reduce the servo power limit to 20% so it doesn't damage itself. */
 #define RANGE_MEASUREMENT_RAW_ANGLE_FOR_850 50
@@ -91,7 +91,7 @@ uint16_t saved0xB2, saved0xC2, saved0xB0, saved0x54, saved0x56;
 void useRangeMeasurementSettings() {
   if (!usingRangeMeasurementSettings) {
     Serial.println(F(
-      "Temporarily changing servo config to extreme range & low power..."));
+      "Temporarily changing servo settings to extreme range & low power..."));
 
     int res;
     if ((res = servo.readRawRegister(0xB2, &saved0xB2)) != HITECD_OK) {
@@ -127,7 +127,7 @@ void useRangeMeasurementSettings() {
 
 void undoRangeMeasurementSettings() {
   if (usingRangeMeasurementSettings) {
-    Serial.println(F("Undoing temporary changes to servo config..."));
+    Serial.println(F("Undoing temporary changes to servo settings..."));
 
     servo.writeRawRegister(0xB2, saved0xB2);
     servo.writeRawRegister(0xC2, saved0xC2);
@@ -141,7 +141,7 @@ void undoRangeMeasurementSettings() {
 
     /* Read back the settings to make sure we have the latest values. */
     int res;
-    if ((res = servo.readConfig(&config)) != HITECD_OK) {
+    if ((res = servo.readSettings(&settings)) != HITECD_OK) {
       printErr(res, true);
     }
 

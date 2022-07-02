@@ -33,7 +33,7 @@ cancel:
 }
 
 void changeAngleSettings850() {
-  if (tentativeRawAngleFor850 == config.rawAngleFor850) {
+  if (tentativeRawAngleFor850 == settings.rawAngleFor850) {
     Serial.print(F("Current raw angle for 850us PWM (left endpoint): "));
   } else {
     Serial.print(F("Tentative raw angle for 850us PWM (left endpoint): "));
@@ -55,7 +55,7 @@ void changeAngleSettings850() {
 }
 
 void changeAngleSettings1500() {
-  if (tentativeRawAngleFor1500 == config.rawAngleFor1500) {
+  if (tentativeRawAngleFor1500 == settings.rawAngleFor1500) {
     Serial.print(F("Current raw angle for 1500us PWM (center point): "));
   } else {
     Serial.print(F("Tentative raw angle for 1500us PWM (center point): "));
@@ -67,7 +67,7 @@ void changeAngleSettings1500() {
 }
 
 void changeAngleSettings2150() {
-  if (tentativeRawAngleFor2150 == config.rawAngleFor2150) {
+  if (tentativeRawAngleFor2150 == settings.rawAngleFor2150) {
     Serial.print(F("Current raw angle for 2150us PWM (right endpoint): "));
   } else {
     Serial.print(F("Tentative raw angle for 2150us PWM (right endpoint): "));
@@ -108,10 +108,10 @@ bool changeAngleSettingsDone() {
     return false;
   }
 
-  config.rawAngleFor850 = tentativeRawAngleFor850;
-  config.rawAngleFor1500 = tentativeRawAngleFor1500;
-  config.rawAngleFor2150 = tentativeRawAngleFor2150;
-  writeConfig();
+  settings.rawAngleFor850 = tentativeRawAngleFor850;
+  settings.rawAngleFor1500 = tentativeRawAngleFor1500;
+  settings.rawAngleFor2150 = tentativeRawAngleFor2150;
+  writeSettings();
   return true;
 }
 
@@ -136,9 +136,9 @@ void changeRangeSettings() {
     goto cancel;
   }
 
-  tentativeRawAngleFor850 = config.rawAngleFor850;
-  tentativeRawAngleFor1500 = config.rawAngleFor1500;
-  tentativeRawAngleFor2150 = config.rawAngleFor2150;
+  tentativeRawAngleFor850 = settings.rawAngleFor850;
+  tentativeRawAngleFor1500 = settings.rawAngleFor1500;
+  tentativeRawAngleFor2150 = settings.rawAngleFor2150;
 
   printAngleSettingsHelp();
 

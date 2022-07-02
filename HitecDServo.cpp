@@ -191,7 +191,7 @@ bool HitecDServo::isModelSupported() {
   }
 }
 
-int HitecDServo::readConfig(HitecDSettings *configOut) {
+int HitecDServo::readSettings(HitecDSettings *settingsOut) {
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
   }
@@ -206,16 +206,16 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
   if (temp & 0xFF00) {
     return HITECD_ERR_CONFUSED;
   }
-  configOut->id = temp & 0xFF;
+  settingsOut->id = temp & 0xFF;
 
   /* Read counterclockwise */
   if ((res = readRawRegister(0x5E, &temp)) != HITECD_OK) {
     return res;
   }
   if (temp == 0x0000) {
-    configOut->counterclockwise = false;
+    settingsOut->counterclockwise = false;
   } else if (temp == 0x0001) {
-    configOut->counterclockwise = true;
+    settingsOut->counterclockwise = true;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -225,9 +225,9 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
     return res;
   }
   if (temp == 0x0FFF) {
-    configOut->speed = 100;
+    settingsOut->speed = 100;
   } else if (temp <= 0x0012) {
-    configOut->speed = temp*5;
+    settingsOut->speed = temp*5;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -245,10 +245,10 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
     return res;
   }
   if (temp0x4E == 0x0001 && temp0x66 == 0x0005 && temp0x68 == 0x000B) {
-    configOut->deadband = 1;
+    settingsOut->deadband = 1;
   } else if (temp0x4E >= 0x0004 && temp0x4E <= 0x0024 && (temp0x4E % 4) == 0 &&
       temp0x66 == temp0x4E + 0x0004 && temp0x68 == temp0x4E + 0x000A) {
-    configOut->deadband = temp0x4E / 4 + 1;
+    settingsOut->deadband = temp0x4E / 4 + 1;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -258,15 +258,15 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
     return res;
   }
   if (temp == 0x0001) {
-    configOut->softStart = 20;
+    settingsOut->softStart = 20;
   } else if (temp == 0x0003) {
-    configOut->softStart = 40;
+    settingsOut->softStart = 40;
   } else if (temp == 0x0006) {
-    configOut->softStart = 60;
+    settingsOut->softStart = 60;
   } else if (temp == 0x0008) {
-    configOut->softStart = 80;
+    settingsOut->softStart = 80;
   } else if (temp == 0x0064) {
-    configOut->softStart = 100;
+    settingsOut->softStart = 100;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -275,29 +275,29 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
   if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->rawAngleFor850 = rawAngleFor850 = temp;
+  settingsOut->rawAngleFor850 = rawAngleFor850 = temp;
   if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->rawAngleFor1500 = rawAngleFor1500 = temp;
+  settingsOut->rawAngleFor1500 = rawAngleFor1500 = temp;
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->rawAngleFor2150 = rawAngleFor2150 = temp;
+  settingsOut->rawAngleFor2150 = rawAngleFor2150 = temp;
 
   /* Read failSafe and failSafeLimp. (A single register controls both.) */
   if ((res = readRawRegister(0x4C, &temp)) != HITECD_OK) {
     return res;
   }
   if (temp >= 850 && temp <= 2150) {
-    configOut->failSafe = temp;
-    configOut->failSafeLimp = false;
+    settingsOut->failSafe = temp;
+    settingsOut->failSafeLimp = false;
   } else if (temp == 0) {
-    configOut->failSafe = 0;
-    configOut->failSafeLimp = true;
+    settingsOut->failSafe = 0;
+    settingsOut->failSafeLimp = true;
   } else if (temp == 1) {
-    configOut->failSafe = 0;
-    configOut->failSafeLimp = false;
+    settingsOut->failSafe = 0;
+    settingsOut->failSafeLimp = false;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -307,17 +307,17 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
     return res;
   }
   if (temp == 0x0FFF) {
-    configOut->powerLimit = 100;
+    settingsOut->powerLimit = 100;
   } else {
     /* Divide rounding up, so nonzero values stay nonzero */
-    configOut->powerLimit = (temp + 19) / 20;
+    settingsOut->powerLimit = (temp + 19) / 20;
   }
 
   /* Read overloadProtection */
   if ((res = readRawRegister(0x9C, &temp)) != HITECD_OK) {
     return res;
   }
-  configOut->overloadProtection = temp;
+  settingsOut->overloadProtection = temp;
 
   /* Read smartSense. smartSense is controlled by two registers, 0x6C and 0x44.
   If smartSense is enabled, these should be set to values read from two
@@ -345,9 +345,9 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
     return res;
   }
   if (temp0x6C == temp0xD4 && temp0x44 == temp0xD6) {
-    configOut->smartSense = true;
+    settingsOut->smartSense = true;
   } else if (temp0x6C == temp0x8A && temp0x44 == temp0x8C) {
-    configOut->smartSense = false;
+    settingsOut->smartSense = false;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -357,7 +357,7 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
     return res;
   }
   if (temp >= 819 && temp <= 4095) {
-    configOut->sensitivityRatio = temp;
+    settingsOut->sensitivityRatio = temp;
   } else {
     return HITECD_ERR_CONFUSED;
   }
@@ -365,12 +365,12 @@ int HitecDServo::readConfig(HitecDSettings *configOut) {
   return HITECD_OK;
 }
 
-int HitecDServo::writeConfig(const HitecDSettings &config) {
-  return writeConfigUnsupportedModelThisMightDamageTheServo(config, false);
+int HitecDServo::writeSettings(const HitecDSettings &settings) {
+  return writeSettingsUnsupportedModelThisMightDamageTheServo(settings, false);
 }
 
-int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
-  const HitecDSettings &config,
+int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
+  const HitecDSettings &settings,
   bool allowUnsupportedModel
 ) {
   int res;
@@ -395,43 +395,43 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   writeRawRegister(0x9A, 0x0003);
 
   /* Write id */
-  if (config.id != HitecDSettings::defaultId) {
-    writeRawRegister(0x32, config.id);
+  if (settings.id != HitecDSettings::defaultId) {
+    writeRawRegister(0x32, settings.id);
   }
 
   /* Write counterclockwise */
-  if (config.counterclockwise) {
+  if (settings.counterclockwise) {
     writeRawRegister(0x5E, 0x0001);
   }
 
   /* Write speed */
-  if (config.speed != HitecDSettings::defaultSpeed) {
-    writeRawRegister(0x54, config.speed / 5);
+  if (settings.speed != HitecDSettings::defaultSpeed) {
+    writeRawRegister(0x54, settings.speed / 5);
   }
 
   /* Write deadband */
-  if (config.deadband != HitecDSettings::defaultDeadband) {
+  if (settings.deadband != HitecDSettings::defaultDeadband) {
     /* The DPC-11 always writes this register to the this constant whenever it
     changes the deadband. I'm not sure why, but we do the same to be safe. */
     writeRawRegister(0x72, 0x4E54);
  
     /* Note, these formulas are wrong if deadband=1, but deadband=1 is the
     factory default, so that's OK. */
-    writeRawRegister(0x4E, 0x0004*config.deadband - 0x0004);
-    writeRawRegister(0x66, 0x0004*config.deadband);
-    writeRawRegister(0x68, 0x0004*config.deadband + 0x0006);
+    writeRawRegister(0x4E, 0x0004*settings.deadband - 0x0004);
+    writeRawRegister(0x66, 0x0004*settings.deadband);
+    writeRawRegister(0x68, 0x0004*settings.deadband + 0x0006);
   }
 
   /* Write softStart */
-  if (config.softStart != HitecDSettings::defaultSoftStart) {
+  if (settings.softStart != HitecDSettings::defaultSoftStart) {
     /* Note, we omit the softStart=20 case because it's the factory default. */
-    if (config.softStart == 40) {
+    if (settings.softStart == 40) {
       writeRawRegister(0x60, 0x0003);
-    } else if (config.softStart == 60) {
+    } else if (settings.softStart == 60) {
       writeRawRegister(0x60, 0x0006);
-    } else if (config.softStart == 80) {
+    } else if (settings.softStart == 80) {
       writeRawRegister(0x60, 0x0008);
-    } else if (config.softStart == 100) {
+    } else if (settings.softStart == 100) {
       writeRawRegister(0x60, 0x0064);
     }
   }
@@ -440,33 +440,33 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   the instance variables that we initialized in attach(). (If we're using the
   default values, then read them back into instance variables, so we have the
   correct default values.) */
-  if (config.rawAngleFor850 != -1 &&
-      config.rawAngleFor850 !=
+  if (settings.rawAngleFor850 != -1 &&
+      settings.rawAngleFor850 !=
         HitecDSettings::defaultRawAngleFor850(modelNumber)) {
-    writeRawRegister(0xB2, config.rawAngleFor850);
-    rawAngleFor850 = config.rawAngleFor850;
+    writeRawRegister(0xB2, settings.rawAngleFor850);
+    rawAngleFor850 = settings.rawAngleFor850;
   } else {
     if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
       return res;
     }
     rawAngleFor850 = temp;
   }
-  if (config.rawAngleFor1500 != -1 &&
-      config.rawAngleFor1500 !=
+  if (settings.rawAngleFor1500 != -1 &&
+      settings.rawAngleFor1500 !=
         HitecDSettings::defaultRawAngleFor1500(modelNumber)) {
-    writeRawRegister(0xC2, config.rawAngleFor1500);
-    rawAngleFor1500 = config.rawAngleFor1500;
+    writeRawRegister(0xC2, settings.rawAngleFor1500);
+    rawAngleFor1500 = settings.rawAngleFor1500;
   } else {
     if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
       return res;
     }
     rawAngleFor1500 = temp;
   }
-  if (config.rawAngleFor2150 != -1 &&
-      config.rawAngleFor2150 !=
+  if (settings.rawAngleFor2150 != -1 &&
+      settings.rawAngleFor2150 !=
         HitecDSettings::defaultRawAngleFor2150(modelNumber)) {
-    writeRawRegister(0xB0, config.rawAngleFor2150);
-    rawAngleFor2150 = config.rawAngleFor2150;
+    writeRawRegister(0xB0, settings.rawAngleFor2150);
+    rawAngleFor2150 = settings.rawAngleFor2150;
   } else {
      if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
       return res;
@@ -475,25 +475,25 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */
-  if (config.failSafe != HitecDSettings::defaultFailSafe) {
-    writeRawRegister(0x4C, config.failSafe);
-  } else if (config.failSafeLimp != HitecDSettings::defaultFailSafeLimp) {
+  if (settings.failSafe != HitecDSettings::defaultFailSafe) {
+    writeRawRegister(0x4C, settings.failSafe);
+  } else if (settings.failSafeLimp != HitecDSettings::defaultFailSafeLimp) {
     writeRawRegister(0x4C, 0x0000);
   }
 
   /* Write powerLimit */
-  if (config.powerLimit != HitecDSettings::defaultPowerLimit) {
-    writeRawRegister(0x56, config.powerLimit * 20);
+  if (settings.powerLimit != HitecDSettings::defaultPowerLimit) {
+    writeRawRegister(0x56, settings.powerLimit * 20);
   }
 
   /* Write overloadProtection */
-  if (config.overloadProtection !=
+  if (settings.overloadProtection !=
       HitecDSettings::defaultOverloadProtection) {
-    writeRawRegister(0x9C, config.overloadProtection);
+    writeRawRegister(0x9C, settings.overloadProtection);
   }
 
   /* Write smartSense */
-  if (!config.smartSense) {
+  if (!settings.smartSense) {
     /* The DPC-11 always writes this register to the this constant whenever it
     enables or disables smartSense. I'm not sure why, but we do the same to be
     safe. */
@@ -513,8 +513,8 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
   }
 
   /* Write sensitivityRatio */
-  if (config.sensitivityRatio != HitecDSettings::defaultSensitivityRatio) {
-    writeRawRegister(0x64, config.sensitivityRatio);
+  if (settings.sensitivityRatio != HitecDSettings::defaultSensitivityRatio) {
+    writeRawRegister(0x64, settings.sensitivityRatio);
   }
 
   /* Writing 0xFFFF to 0x70 tells the servo to save its settings to EEPROM */

@@ -42,7 +42,7 @@ struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.
 
   `rawAngleFor850`, `rawAngleFor1500`, and `rawAngleFor2150` will be set to -1;
-  this isn't the factory-default value, but it will cause `writeConfig()` to
+  this isn't the factory-default value, but it will cause `writeSettings()` to
   keep the factory-default value. */
   HitecDSettings();
 
@@ -60,9 +60,9 @@ struct HitecDSettings {
   you've changed those settings to non-default values, you can use the following
   formulas to convert between the clockwise values and equivalent
   counterclockwise values:
-    config.rawAngleFor850 = 16383 - prevRawAngleFor2150;
-    config.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
-    config.rawAngleFor2150 = 16383 - prevRawAngleFor850;
+    settings.rawAngleFor850 = 16383 - prevRawAngleFor2150;
+    settings.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
+    settings.rawAngleFor2150 = 16383 - prevRawAngleFor850;
   */
   bool counterclockwise;
   static const bool defaultCounterclockwise = false;
@@ -100,7 +100,7 @@ struct HitecDSettings {
   `rawAngleFor850 < rawAngleFor1500 < rawAngleFor2150` regardless of the value
   of `counterclockwise`.
 
-  If you call writeConfig() with these values set to -1, then the
+  If you call writeSettings() with these values set to -1, then the
   factory-default values will be kept. */
   int16_t rawAngleFor850, rawAngleFor1500, rawAngleFor2150;
 
@@ -196,20 +196,20 @@ public:
   version of the HitecDServo library. */
   bool isModelSupported();
 
-  /* Retrieves the configuration from the servo. */
-  int readConfig(HitecDSettings *configOut);
+  /* Retrieves the current settings from the servo. */
+  int readSettings(HitecDSettings *settingsOut);
 
-  /* Resets the servo to its factory-default configuration, then uploads the
-  given configuration. Note: Right now, this only works for the D485HW model.
-  Other models will return an error. */
-  int writeConfig(const HitecDSettings &config);
+  /* Resets the servo to its factory-default settings, then uploads the given
+  settings. Note: Right now, this only works for the D485HW model. Other models
+  will return an error. */
+  int writeSettings(const HitecDSettings &settings);
 
-  /* It's dangerous to change the configuration of a non-D485HW model; this
-  hasn't been tested, and might damage the servo. If you're willing to take the
-  risk, you can use writeConfigUnsupportedModelThisMightDamageTheServo() with
+  /* It's dangerous to change the settings of a non-D485HW model; this hasn't
+  been tested, and might damage the servo. If you're willing to take the risk,
+  you can use writeSettingsUnsupportedModelThisMightDamageTheServo() with
   allowUnsupportedModel=true to skip checking the servo model. */
-  int writeConfigUnsupportedModelThisMightDamageTheServo(
-    const HitecDSettings &config,
+  int writeSettingsUnsupportedModelThisMightDamageTheServo(
+    const HitecDSettings &settings,
     bool allowUnsupportedModel);
 
   /* Directly read/write registers on the servo. Don't use this unless you know
