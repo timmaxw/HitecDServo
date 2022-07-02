@@ -2,6 +2,7 @@
 
 #include "CommandLine.h"
 #include "Common.h"
+#include "UnsupportedModel.h"
 
 int16_t measuredMinAPV = -1;
 int16_t measuredMaxAPV = -1;

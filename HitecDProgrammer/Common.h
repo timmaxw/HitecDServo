@@ -10,7 +10,6 @@ extern bool allowUnsupportedModel;
 
 void printErr(int res, bool needReset);
 void printValueWithDefault(int16_t value, int16_t defaultValue);
-bool checkSupportedModel();
 void writeSettings();
 
 void useRangeMeasurementSettings();

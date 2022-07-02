@@ -2,6 +2,7 @@
 
 #include "CommandLine.h"
 #include "Common.h"
+#include "UnsupportedModel.h"
 
 void printIdSetting() {
   Serial.print(F("Current ID: "));
