@@ -41,7 +41,7 @@ const char *hitecdErrToString(int err);
 struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.
 
-  `rawAngleFor850`, `rawAngleFor1500`, and `rawAngleFor2150` will be set to -1;
+  `rangeLeftRawAngle`, `rangeCenterRawAngle`, and `rangeRightRawAngle` will be set to -1;
   this isn't the factory-default value, but it will cause `writeSettings()` to
   keep the factory-default value. */
   HitecDSettings();
@@ -56,13 +56,13 @@ struct HitecDSettings {
   turn counterclockwise.
   
   Note: Switching the servo direction will invert the meaning of the
-  `rawAngleFor850`, `rawAngleFor2150`, and `rawAngleFor1500` settings. If
+  `rangeLeftRawAngle`, `rangeRightRawAngle`, and `rangeCenterRawAngle` settings. If
   you've changed those settings to non-default values, you can use the following
   formulas to convert between the clockwise values and equivalent
   counterclockwise values:
-    settings.rawAngleFor850 = 16383 - prevRawAngleFor2150;
-    settings.rawAngleFor1500 = 16383 - prevRawAngleFor1500;
-    settings.rawAngleFor2150 = 16383 - prevRawAngleFor850;
+    settings.rangeLeftRawAngle = 16383 - prevRangeRightRawAngle;
+    settings.rangeCenterRawAngle = 16383 - prevRangeCenterRawAngle;
+    settings.rangeRightRawAngle = 16383 - prevRangeLeftRawAngle;
   */
   bool counterclockwise;
   static const bool defaultCounterclockwise = false;
@@ -88,28 +88,28 @@ struct HitecDSettings {
   int8_t softStart;
   static const int8_t defaultSoftStart = 20;
 
-  /* `rawAngleFor850`, `rawAngleFor1500` and `rawAngleFor2150` define how servo
+  /* `rangeLeftRawAngle`, `rangeCenterRawAngle` and `rangeRightRawAngle` define how servo
   pulse widths are related to physical servo angle:
-  - `rawAngleFor850` defines the angle for a 850us pulse (left endpoint)
-  - `rawAngleFor1500` defines the angle for a 1500us pulse (center point)
-  - `rawAngleFor2150` defines the angle for a 2150us pulse (right endpoint)
+  - `rangeLeftRawAngle` defines the angle for a 850us pulse (left endpoint)
+  - `rangeCenterRawAngle` defines the angle for a 1500us pulse (center point)
+  - `rangeRightRawAngle` defines the angle for a 2150us pulse (right endpoint)
 
   Raw angles are defined by numbers ranging from 0 to 16383 (=2**14-1). If
   `counterclockwise=false`, higher numbers are clockwise. But if
   `counterclockwise=true`, higher numbers are counterclockwise. This means that
-  `rawAngleFor850 < rawAngleFor1500 < rawAngleFor2150` regardless of the value
+  `rangeLeftRawAngle < rangeCenterRawAngle < rangeRightRawAngle` regardless of the value
   of `counterclockwise`.
 
   If you call writeSettings() with these values set to -1, then the
   factory-default values will be kept. */
-  int16_t rawAngleFor850, rawAngleFor1500, rawAngleFor2150;
+  int16_t rangeLeftRawAngle, rangeCenterRawAngle, rangeRightRawAngle;
 
   /* Convenience functions to return the factory-default raw angles for the
   given servo model. Right now this only works for the D485HW; other models will
   return -1. */
-  static int16_t defaultRawAngleFor850(int modelNumber);
-  static int16_t defaultRawAngleFor1500(int modelNumber);
-  static int16_t defaultRawAngleFor2150(int modelNumber);
+  static int16_t defaultRangeLeftRawAngle(int modelNumber);
+  static int16_t defaultRangeCenterRawAngle(int modelNumber);
+  static int16_t defaultRangeRightRawAngle(int modelNumber);
 
   /* Convenience functions to return the min/max raw angles that the servo
   can be safely driven to without hitting physical stops. (This may vary
@@ -227,7 +227,7 @@ private:
   volatile uint8_t *pinInputRegister, *pinOutputRegister;
 
   int modelNumber;
-  int16_t rawAngleFor850, rawAngleFor1500, rawAngleFor2150;
+  int16_t rangeLeftRawAngle, rangeCenterRawAngle, rangeRightRawAngle;
 };
 
 #endif /* HitecDServo_h */

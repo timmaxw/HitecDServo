@@ -6,9 +6,9 @@
 int16_t measuredMinRawAngle = -1;
 int16_t measuredMaxRawAngle = -1;
 
-int16_t tentativeRawAngleFor850;
-int16_t tentativeRawAngleFor1500;
-int16_t tentativeRawAngleFor2150;
+int16_t tentativeRangeLeft;
+int16_t tentativeRangeCenter;
+int16_t tentativeRangeRight;
 
 void changeSingleAngleSetting(int16_t *tentativeRawAngleInOut) {
   Serial.println(F("Enter new raw angle (or nothing to cancel)"));
@@ -33,13 +33,13 @@ cancel:
 }
 
 void changeAngleSettings850() {
-  if (tentativeRawAngleFor850 == settings.rawAngleFor850) {
+  if (tentativeRangeLeft == settings.rangeLeftRawAngle) {
     Serial.print(F("Current raw angle for 850us PWM (left endpoint): "));
   } else {
     Serial.print(F("Tentative raw angle for 850us PWM (left endpoint): "));
   }
-  printValueWithDefault(tentativeRawAngleFor850,
-    HitecDSettings::defaultRawAngleFor850(modelNumber));
+  printValueWithDefault(tentativeRangeLeft,
+    HitecDSettings::defaultRangeLeftRawAngle(modelNumber));
   if (measuredMinRawAngle != -1) {
     Serial.print(F("Measured minimum for your servo: "));
     Serial.println(measuredMinRawAngle);
@@ -51,29 +51,29 @@ void changeAngleSettings850() {
     }
   }
 
-  changeSingleAngleSetting(&tentativeRawAngleFor850);
+  changeSingleAngleSetting(&tentativeRangeLeft);
 }
 
 void changeAngleSettings1500() {
-  if (tentativeRawAngleFor1500 == settings.rawAngleFor1500) {
+  if (tentativeRangeCenter == settings.rangeCenterRawAngle) {
     Serial.print(F("Current raw angle for 1500us PWM (center point): "));
   } else {
     Serial.print(F("Tentative raw angle for 1500us PWM (center point): "));
   }
-  printValueWithDefault(tentativeRawAngleFor1500,
-    HitecDSettings::defaultRawAngleFor1500(modelNumber));
+  printValueWithDefault(tentativeRangeCenter,
+    HitecDSettings::defaultRangeCenterRawAngle(modelNumber));
 
-  changeSingleAngleSetting(&tentativeRawAngleFor1500);
+  changeSingleAngleSetting(&tentativeRangeCenter);
 }
 
 void changeAngleSettings2150() {
-  if (tentativeRawAngleFor2150 == settings.rawAngleFor2150) {
+  if (tentativeRangeRight == settings.rangeRightRawAngle) {
     Serial.print(F("Current raw angle for 2150us PWM (right endpoint): "));
   } else {
     Serial.print(F("Tentative raw angle for 2150us PWM (right endpoint): "));
   }
-  printValueWithDefault(tentativeRawAngleFor2150,
-    HitecDSettings::defaultRawAngleFor2150(modelNumber));
+  printValueWithDefault(tentativeRangeRight,
+    HitecDSettings::defaultRangeRightRawAngle(modelNumber));
   if (measuredMaxRawAngle != -1) {
     Serial.print(F("Measured maximum for your servo: "));
     Serial.println(measuredMaxRawAngle);
@@ -85,7 +85,7 @@ void changeAngleSettings2150() {
     }
   }
 
-  changeSingleAngleSetting(&tentativeRawAngleFor2150);
+  changeSingleAngleSetting(&tentativeRangeRight);
 }
 
 void changeAngleSettingsMove(int16_t targetRawAngle) {
@@ -97,20 +97,20 @@ void changeAngleSettingsMove(int16_t targetRawAngle) {
 }
 
 bool changeAngleSettingsDone() {
-  if (tentativeRawAngleFor850 > tentativeRawAngleFor1500) {
+  if (tentativeRangeLeft > tentativeRangeCenter) {
     Serial.println(F(
       "Error: Left endpoint must be less than center point."));
     return false;
   }
-  if (tentativeRawAngleFor2150 < tentativeRawAngleFor1500) {
+  if (tentativeRangeRight < tentativeRangeCenter) {
     Serial.println(F(
       "Error: Right endpoint must be greater than center point."));
     return false;
   }
 
-  settings.rawAngleFor850 = tentativeRawAngleFor850;
-  settings.rawAngleFor1500 = tentativeRawAngleFor1500;
-  settings.rawAngleFor2150 = tentativeRawAngleFor2150;
+  settings.rangeLeftRawAngle = tentativeRangeLeft;
+  settings.rangeCenterRawAngle = tentativeRangeCenter;
+  settings.rangeRightRawAngle = tentativeRangeRight;
   writeSettings();
   return true;
 }
@@ -136,9 +136,9 @@ void changeRangeSettings() {
     goto cancel;
   }
 
-  tentativeRawAngleFor850 = settings.rawAngleFor850;
-  tentativeRawAngleFor1500 = settings.rawAngleFor1500;
-  tentativeRawAngleFor2150 = settings.rawAngleFor2150;
+  tentativeRangeLeft = settings.rangeLeftRawAngle;
+  tentativeRangeCenter = settings.rangeCenterRawAngle;
+  tentativeRangeRight = settings.rangeRightRawAngle;
 
   printAngleSettingsHelp();
 
