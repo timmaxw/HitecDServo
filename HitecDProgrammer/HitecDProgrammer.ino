@@ -1,25 +1,8 @@
 #include <HitecDServo.h>
 
 #include "CommandLine.h"
-
-HitecDServo servo;
-int modelNumber;
-HitecDServoConfig config;
-bool allowUnsupportedModel = false;
-
-void printErr(int res, bool needReset) {
-  if (res == HITECD_OK) {
-    return;
-  }
-
-  Serial.print(F("Error: "));
-  Serial.println(hitecdErrToString(res));
-
-  if (needReset) {
-    Serial.println(F("Please fix the problem and then reset your Arduino."));
-    while (true) { }
-  }
-}
+#include "Common.h"
+#include "RangeSettings.h"
 
 void printRegisterDump() {
   static uint8_t registersToDebug[] = {
@@ -60,17 +43,6 @@ void printRegisterDump() {
     } else {
       Serial.print(' ');
     }
-  }
-}
-
-void printValueWithDefault(int16_t value, int16_t defaultValue) {
-  Serial.print(value, DEC);
-  if (value == defaultValue) {
-    Serial.println(F(" (default)"));
-  } else if (defaultValue != -1) {
-    Serial.print(F(" (default is "));
-    Serial.print(defaultValue, DEC);
-    Serial.println(')');
   }
 }
 
@@ -144,50 +116,6 @@ void printConfig() {
   Serial.print(F("  Sensitivity ratio: "));
   printValueWithDefault(config.sensitivityRatio,
     HitecDServoConfig::defaultSensitivityRatio);
-}
-
-bool checkSupportedModel() {
-  if (servo.isModelSupported() || allowUnsupportedModel) {
-    return true;
-  }
-
-  Serial.println(F(
-    "Warning: Your servo model is not fully supported. Changing the\r\n"
-    "settings may lead to unexpected behavior or even damage the servo.\r\n"
-    "Proceed at your own risk. If you want to proceed, please enter\r\n"
-    "\"This might damage the servo\" exactly (or enter nothing to cancel):"));
-  scanRawInput();
-  if (parseWord("This might damage the servo")) {
-    allowUnsupportedModel = true;
-    return true;
-  } else if (rawInputLen == 0) {
-    return false;
-  } else {
-    Serial.println(F("You did not enter \"This might damage the servo\"."));
-    return false;
-  }
-}
-
-void writeConfig() {
-  int res;
-  Serial.println(F("Changing servo config..."));
-
-  res = servo.writeConfigUnsupportedModelThisMightDamageTheServo(
-    config,
-    allowUnsupportedModel
-  );
-  if (res != HITECD_OK) {
-    printErr(res, true);
-  }
-
-  /* Read back the settings to make sure we have the latest values. */
-  if ((res = servo.readConfig(&config)) != HITECD_OK) {
-    printErr(res, true);
-  }
-
-  Serial.println(F("Done."));
-
-  return true;
 }
 
 void changeIdSetting() {
@@ -342,10 +270,6 @@ cancel:
   Serial.println(F("Current soft start will be kept."));
 }
 
-void changeAngleSettings() {
-  Serial.println(F("Error: Angle settings not implemented yet."));
-}
-
 void changeFailSafeSetting() {
   Serial.print(F("Current fail safe: "));
   if (config.failSafe) {
@@ -392,7 +316,7 @@ void changeFailSafeSetting() {
   return;
 
 cancel:
-  Serial.println(F("Current soft start will be kept."));
+  Serial.println(F("Current fail safe will be kept."));
 }
 
 void changePowerLimitSetting() {
@@ -618,20 +542,34 @@ void setup() {
 
 void printHelp() {
   Serial.println(F("Available commands:"));
-  Serial.println(F("  show        - Show current servo settings"));
-  Serial.println(F("  id          - Change ID setting"));
-  Serial.println(F("  direction   - Change direction setting"));
-  Serial.println(F("  speed       - Change speed setting"));
-  Serial.println(F("  deadband    - Change deadband setting"));
-  Serial.println(F("  softstart   - Change soft-start setting"));
-  Serial.println(F("  angle       - Change angle neutral/endpoint settings"));
-  Serial.println(F("  failsafe    - Change fail-safe setting"));
-  Serial.println(F("  powerlimit  - Change power-limit setting"));
-  Serial.println(F("  overload    - Change overload-protection setting"));
-  Serial.println(F("  smartsense  - Change smart sense setting"));
-  Serial.println(F("  sensitivity - Change sensitivity ratio setting"));
-  Serial.println(F("  reset       - Reset all settings to factory defaults"));
-  Serial.println(F("  help        - Show this list of commands again"));
+  Serial.println(F(
+    "  show        - Show current servo settings"));
+  Serial.println(F(
+    "  id          - Change ID setting"));
+  Serial.println(F(
+    "  direction   - Change direction setting"));
+  Serial.println(F(
+    "  speed       - Change speed setting"));
+  Serial.println(F(
+    "  deadband    - Change deadband setting"));
+  Serial.println(F(
+    "  softstart   - Change soft-start setting"));
+  Serial.println(F(
+    "  range       - Change range-of-motion settings"));
+  Serial.println(F(
+    "  failsafe    - Change fail-safe setting"));
+  Serial.println(F(
+    "  powerlimit  - Change power-limit setting"));
+  Serial.println(F(
+    "  overload    - Change overload-protection setting"));
+  Serial.println(F(
+    "  smartsense  - Change smart sense setting"));
+  Serial.println(F(
+    "  sensitivity - Change sensitivity ratio setting"));
+  Serial.println(F(
+    "  reset       - Reset all settings to factory defaults"));
+  Serial.println(F(
+    "  help        - Show this list of commands again"));
 }
 
 void loop() {
@@ -651,8 +589,8 @@ void loop() {
     changeDeadbandSetting();
   } else if (parseWord("softstart")) {
     changeSoftStartSetting();
-  } else if (parseWord("angle")) {
-    changeAngleSettings();
+  } else if (parseWord("range")) {
+    changeRangeSettings();
   } else if (parseWord("failsafe")) {
     changeFailSafeSetting();
   } else if (parseWord("powerlimit")) {
@@ -668,7 +606,7 @@ void loop() {
   } else if (parseWord("help")) {
     printHelp();
   } else {
-    Serial.print(F("Error: What you entered is not a valid command."));
+    Serial.println(F("Error: What you entered is not a valid command."));
     printHelp();
   }
 }

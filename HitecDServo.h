@@ -115,8 +115,8 @@ struct HitecDServoConfig {
   /* Convenience functions to return the min/max raw angles that the servo
   can be safely driven to without hitting physical stops. (This may vary
   slightly from servo to servo; these are conservative values.) */
-  static int16_t minSafeRawAngle(int modelNumber);
-  static int16_t maxSafeRawAngle(int modelNumber);
+  static int16_t safeMinRawAngle(int modelNumber);
+  static int16_t safeMaxRawAngle(int modelNumber);
 
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,

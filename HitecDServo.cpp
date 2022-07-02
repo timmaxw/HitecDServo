@@ -60,7 +60,7 @@ int16_t HitecDServoConfig::defaultRawAngleFor2150(int modelNumber) {
   }
 }
 
-int16_t HitecDServoConfig::minSafeRawAngle(int modelNumber) {
+int16_t HitecDServoConfig::safeMinRawAngle(int modelNumber) {
   switch (modelNumber) {
     /* I measured 731, and added +50 as a margin of error */
     case 485: return 731 + 50;
@@ -68,8 +68,8 @@ int16_t HitecDServoConfig::minSafeRawAngle(int modelNumber) {
   }
 }
 
-int16_t HitecDServoConfig::maxSafeRawAngle(int modelNumber) {
-  int16_t min = minSafeRawAngle(modelNumber);
+int16_t HitecDServoConfig::safeMaxRawAngle(int modelNumber) {
+  int16_t min = safeMinRawAngle(modelNumber);
   if (min == -1) {
     return -1;
   }
