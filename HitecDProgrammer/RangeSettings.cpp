@@ -3,130 +3,132 @@
 #include "CommandLine.h"
 #include "Common.h"
 
-int16_t measuredMinRawAngle = -1;
-int16_t measuredMaxRawAngle = -1;
+int16_t measuredMinAPV = -1;
+int16_t measuredMaxAPV = -1;
 
-int16_t tentativeRangeLeft;
-int16_t tentativeRangeCenter;
-int16_t tentativeRangeRight;
+int16_t tentativeRangeLeftAPV;
+int16_t tentativeRangeCenterAPV;
+int16_t tentativeRangeRightAPV;
 
-void changeSingleAngleSetting(int16_t *tentativeRawAngleInOut) {
-  Serial.println(F("Enter new raw angle (or nothing to cancel)"));
-  int16_t newRawAngle;
-  if (!scanNumber(&newRawAngle)) {
+void changeRangeAPVHelper(int16_t *tentativeAPVInOut) {
+  Serial.println(F("Enter new point as APV (or nothing to cancel)"));
+  int16_t newAPV;
+  if (!scanNumber(&newAPV)) {
     goto cancel;
   }
-  if (newRawAngle == *tentativeRawAngleInOut) {
+  if (newAPV == *tentativeAPVInOut) {
     goto cancel;
   }
-  if (newRawAngle > 16383) {
-    Serial.println(F("Error: Invalid raw angle."));
+  if (newAPV > 16383) {
+    Serial.println(F("Error: Invalid APV."));
     goto cancel;
   }
 
-  *tentativeRawAngleInOut = newRawAngle;
-  Serial.println(F("Tentatively changed raw angle."));
+  *tentativeAPVInOut = newAPV;
+  Serial.println(F(
+    "Tentatively changed range of motion. Use 'save' command to make this\r\n"
+    "change permanent."));
   return;
 
 cancel:
-  Serial.println(F("Current raw angle will be kept."));
+  Serial.println(F("Current range of motion will be kept."));
 }
 
-void changeAngleSettings850() {
-  if (tentativeRangeLeft == settings.rangeLeftRawAngle) {
-    Serial.print(F("Current raw angle for 850us PWM (left endpoint): "));
+void changeRangeLeftAPV() {
+  if (tentativeRangeLeftAPV == settings.rangeLeftAPV) {
+    Serial.print(F("Current left endpoint of range, as APV: "));
   } else {
-    Serial.print(F("Tentative raw angle for 850us PWM (left endpoint): "));
+    Serial.print(F("Tentative left endpoint of range, as APV: "));
   }
-  printValueWithDefault(tentativeRangeLeft,
-    HitecDSettings::defaultRangeLeftRawAngle(modelNumber));
-  if (measuredMinRawAngle != -1) {
-    Serial.print(F("Measured minimum for your servo: "));
-    Serial.println(measuredMinRawAngle);
+  printValueWithDefault(tentativeRangeLeftAPV,
+    HitecDSettings::defaultRangeLeftAPV(modelNumber));
+  if (measuredMinAPV != -1) {
+    Serial.print(F("Measured minimum APV for your servo: "));
+    Serial.println(measuredMinAPV);
   } else {
-    int16_t safeMinRawAngle = HitecDSettings::safeMinRawAngle(modelNumber);
-    if (safeMinRawAngle != -1) {
-      Serial.print(F("Safe minimum for your servo: "));
-      Serial.println(safeMinRawAngle);
+    int16_t safeMinAPV = HitecDSettings::safeMinAPV(modelNumber);
+    if (safeMinAPV != -1) {
+      Serial.print(F("Safe minimum APV for your servo: "));
+      Serial.println(safeMinAPV);
     }
   }
 
-  changeSingleAngleSetting(&tentativeRangeLeft);
+  changeRangeAPVHelper(&tentativeRangeLeftAPV);
 }
 
-void changeAngleSettings1500() {
-  if (tentativeRangeCenter == settings.rangeCenterRawAngle) {
-    Serial.print(F("Current raw angle for 1500us PWM (center point): "));
+void changeRangeCenterAPV() {
+  if (tentativeRangeCenterAPV == settings.rangeCenterAPV) {
+    Serial.print(F("Current center point of range, as APV: "));
   } else {
-    Serial.print(F("Tentative raw angle for 1500us PWM (center point): "));
+    Serial.print(F("Tentative center point of range, as APV: "));
   }
-  printValueWithDefault(tentativeRangeCenter,
-    HitecDSettings::defaultRangeCenterRawAngle(modelNumber));
+  printValueWithDefault(tentativeRangeCenterAPV,
+    HitecDSettings::defaultRangeCenterAPV(modelNumber));
 
-  changeSingleAngleSetting(&tentativeRangeCenter);
+  changeRangeAPVHelper(&tentativeRangeCenterAPV);
 }
 
-void changeAngleSettings2150() {
-  if (tentativeRangeRight == settings.rangeRightRawAngle) {
-    Serial.print(F("Current raw angle for 2150us PWM (right endpoint): "));
+void changeRangeRightAPV() {
+  if (tentativeRangeRightAPV == settings.rangeRightAPV) {
+    Serial.print(F("Current right endpoint of range, as APV: "));
   } else {
-    Serial.print(F("Tentative raw angle for 2150us PWM (right endpoint): "));
+    Serial.print(F("Tentative right endpoint of range, as APV: "));
   }
-  printValueWithDefault(tentativeRangeRight,
-    HitecDSettings::defaultRangeRightRawAngle(modelNumber));
-  if (measuredMaxRawAngle != -1) {
+  printValueWithDefault(tentativeRangeRightAPV,
+    HitecDSettings::defaultRangeRightAPV(modelNumber));
+  if (measuredMaxAPV != -1) {
     Serial.print(F("Measured maximum for your servo: "));
-    Serial.println(measuredMaxRawAngle);
+    Serial.println(measuredMaxAPV);
   } else {
-    int16_t safeMaxRawAngle = HitecDSettings::safeMaxRawAngle(modelNumber);
-    if (safeMaxRawAngle != -1) {
+    int16_t safeMaxAPV = HitecDSettings::safeMaxAPV(modelNumber);
+    if (safeMaxAPV != -1) {
       Serial.print(F("Safe maximum for your servo: "));
-      Serial.println(safeMaxRawAngle);
+      Serial.println(safeMaxAPV);
     }
   }
 
-  changeSingleAngleSetting(&tentativeRangeRight);
+  changeRangeAPVHelper(&tentativeRangeRightAPV);
 }
 
-void changeAngleSettingsMove(int16_t targetRawAngle) {
+void temporarilyMoveToAPVAndPrint(int16_t targetAPV) {
   Serial.println(F("Moving..."));
-  int16_t actualRawAngle;
-  moveTempRawAngle(targetRawAngle, &actualRawAngle);
-  Serial.print(F("The raw angle the servo actually reached was: "));
-  Serial.println(actualRawAngle);
+  int16_t actualAPV;
+  temporarilyMoveToAPV(targetAPV, &actualAPV);
+  Serial.print(F("The APV the servo actually reached was: "));
+  Serial.println(actualAPV);
 }
 
-bool changeAngleSettingsDone() {
-  if (tentativeRangeLeft > tentativeRangeCenter) {
+bool saveRangeSettings() {
+  if (tentativeRangeLeftAPV > tentativeRangeCenterAPV) {
     Serial.println(F(
       "Error: Left endpoint must be less than center point."));
     return false;
   }
-  if (tentativeRangeRight < tentativeRangeCenter) {
+  if (tentativeRangeRightAPV < tentativeRangeCenterAPV) {
     Serial.println(F(
       "Error: Right endpoint must be greater than center point."));
     return false;
   }
 
-  settings.rangeLeftRawAngle = tentativeRangeLeft;
-  settings.rangeCenterRawAngle = tentativeRangeCenter;
-  settings.rangeRightRawAngle = tentativeRangeRight;
+  settings.rangeLeftAPV = tentativeRangeLeftAPV;
+  settings.rangeCenterAPV = tentativeRangeCenterAPV;
+  settings.rangeRightAPV = tentativeRangeRightAPV;
   writeSettings();
   return true;
 }
 
-void printAngleSettingsHelp() {
-  Serial.println(F("Available commands for changing angle settings:"));
+void printRangeSettingsHelp() {
+  Serial.println(F("Available commands for setting range of motion:"));
   Serial.println(F(
-    "  left        - Change raw angle for 850us (left endpoint)"));
+    "  left        - Change left endpoint setting"));
   Serial.println(F(
-    "  center      - Change raw angle for 1500us (center point)"));
+    "  center      - Change center point setting"));
   Serial.println(F(
-    "  right       - Change raw angle for 2150us (right endpoint)"));
+    "  right       - Change right endpoint setting"));
   Serial.println(F(
-    "  <number>    - Temporarily tell servo to move to arbitrary raw angle"));
+    "  <number>    - Temporarily tell servo to move to arbitrary APV"));
   Serial.println(F(
-    "  done        - Save changes and return to main menu"));
+    "  save        - Save changes and return to main menu"));
   Serial.println(F(
     "  cancel      - Cancel changes and return to main menu")); 
 }
@@ -136,41 +138,41 @@ void changeRangeSettings() {
     goto cancel;
   }
 
-  tentativeRangeLeft = settings.rangeLeftRawAngle;
-  tentativeRangeCenter = settings.rangeCenterRawAngle;
-  tentativeRangeRight = settings.rangeRightRawAngle;
+  tentativeRangeLeftAPV = settings.rangeLeftAPV;
+  tentativeRangeCenterAPV = settings.rangeCenterAPV;
+  tentativeRangeRightAPV = settings.rangeRightAPV;
 
-  printAngleSettingsHelp();
+  printRangeSettingsHelp();
 
   while (true) {
-    Serial.println(F("Enter a command for changing angle settings:"));
+    Serial.println(F("Enter a command for setting range of motion:"));
     scanRawInput();
     if (parseWord("left")) {
-      changeAngleSettings850();
+      changeRangeLeftAPV();
     } else if (parseWord("center")) {
-      changeAngleSettings1500();
+      changeRangeCenterAPV();
     } else if (parseWord("right")) {
-      changeAngleSettings2150();
+      changeRangeRightAPV();
     } else if (rawInput[0] >= '0' && rawInput[0] <= '9') {
-      int16_t targetRawAngle;
-      if (!parseNumber(&targetRawAngle)) {
+      int16_t targetAPV;
+      if (!parseNumber(&targetAPV)) {
         continue;
       }
-      changeAngleSettingsMove(targetRawAngle);
-    } else if (parseWord("done")) {
-      if (changeAngleSettingsDone()) {
+      temporarilyMoveToAPVAndPrint(targetAPV);
+    } else if (parseWord("save")) {
+      if (saveRangeSettings()) {
         return;
       }
     } else if (parseWord("cancel")) {
       goto cancel;
     } else {
       Serial.println(F("Error: What you entered is not a valid command."));
-      printAngleSettingsHelp();
+      printRangeSettingsHelp();
     }
   }
 
 cancel:
-  Serial.println(F("Previous angle left/center/right settings will be kept."));
+  Serial.println(F("Previous range of motion settings will be kept."));
   undoRangeMeasurementSettings();
 }
 

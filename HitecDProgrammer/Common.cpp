@@ -150,12 +150,12 @@ void undoRangeMeasurementSettings() {
   }
 }
 
-void moveTempRawAngle(int16_t targetRawAngle, int16_t *actualRawAngle) {
+void temporarilyMoveToAPV(int16_t targetAPV, int16_t *actualAPV) {
   useRangeMeasurementSettings();
 
   /* Instruct the servo to move */
   int16_t targetQuarterMicros = map(
-    targetRawAngle,
+    targetAPV,
     RANGE_MEASUREMENT_RAW_ANGLE_FOR_850,
     RANGE_MEASUREMENT_RAW_ANGLE_FOR_2150,
     850 * 4,
@@ -163,20 +163,20 @@ void moveTempRawAngle(int16_t targetRawAngle, int16_t *actualRawAngle) {
   servo.writeTargetQuarterMicros(targetQuarterMicros);
 
   /* Wait until it seems to have successfully moved */
-  int16_t lastActualRawAngle = servo.readCurrentRawAngle();
-  if (lastActualRawAngle < 0) {
-    printErr(lastActualRawAngle, true);
+  int16_t lastActualAPV = servo.readCurrentAPV();
+  if (lastActualAPV < 0) {
+    printErr(lastActualAPV, true);
   }
   for (int i = 0; i < 50; ++i) {
     delay(100);
-    *actualRawAngle = servo.readCurrentRawAngle();
-    if (*actualRawAngle < 0) {
-      printErr(*actualRawAngle, true);
+    *actualAPV = servo.readCurrentAPV();
+    if (*actualAPV < 0) {
+      printErr(*actualAPV, true);
     }
-    if (abs(lastActualRawAngle - *actualRawAngle) <= 3) {
+    if (abs(lastActualAPV - *actualAPV) <= 3) {
       break;
     }
-    lastActualRawAngle = *actualRawAngle;
+    lastActualAPV = *actualAPV;
   }
 }
 

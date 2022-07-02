@@ -73,16 +73,16 @@ void printSettings() {
     HitecDSettings::defaultSoftStart);
 
   Serial.print(F("  Raw angle for 850us PWM (left endpoint): "));
-  printValueWithDefault(settings.rangeLeftRawAngle,
-    HitecDSettings::defaultRangeLeftRawAngle(modelNumber));
+  printValueWithDefault(settings.rangeLeftAPV,
+    HitecDSettings::defaultRangeLeftAPV(modelNumber));
 
   Serial.print(F("  Raw angle for 1500us PWM (center point): "));
-  printValueWithDefault(settings.rangeCenterRawAngle,
-    HitecDSettings::defaultRangeCenterRawAngle(modelNumber));
+  printValueWithDefault(settings.rangeCenterAPV,
+    HitecDSettings::defaultRangeCenterAPV(modelNumber));
 
   Serial.print(F("  Raw angle for 2150us PWM (right endpoint): "));
-  printValueWithDefault(settings.rangeRightRawAngle,
-    HitecDSettings::defaultRangeRightRawAngle(modelNumber));
+  printValueWithDefault(settings.rangeRightAPV,
+    HitecDSettings::defaultRangeRightAPV(modelNumber));
 
   Serial.print(F("  Fail safe: "));
   if (settings.failSafe) {
@@ -175,12 +175,12 @@ void changeDirectionSetting() {
   }
 
   settings.counterclockwise = newCounterclockwise;
-  int16_t prevRawAngleFor850 = settings.rangeLeftRawAngle;
-  int16_t prevRawAngleFor1500 = settings.rangeCenterRawAngle;
-  int16_t prevRawAngleFor2150 = settings.rangeRightRawAngle;
-  settings.rangeLeftRawAngle = 16383 - prevRawAngleFor2150;
-  settings.rangeCenterRawAngle = 16383 - prevRawAngleFor1500;
-  settings.rangeRightRawAngle = 16383 - prevRawAngleFor850;
+  int16_t prevAPVFor850 = settings.rangeLeftAPV;
+  int16_t prevAPVFor1500 = settings.rangeCenterAPV;
+  int16_t prevAPVFor2150 = settings.rangeRightAPV;
+  settings.rangeLeftAPV = 16383 - prevAPVFor2150;
+  settings.rangeCenterAPV = 16383 - prevAPVFor1500;
+  settings.rangeRightAPV = 16383 - prevAPVFor850;
   // TODO: Print new raw angles
   writeSettings();
   return;

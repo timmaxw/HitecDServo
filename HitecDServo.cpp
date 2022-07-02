@@ -28,9 +28,9 @@ HitecDSettings::HitecDSettings() :
   speed(defaultSpeed),
   deadband(defaultDeadband),
   softStart(defaultSoftStart),
-  rangeLeftRawAngle(-1),
-  rangeCenterRawAngle(-1),
-  rangeRightRawAngle(-1),
+  rangeLeftAPV(-1),
+  rangeCenterAPV(-1),
+  rangeRightAPV(-1),
   failSafe(defaultFailSafe),
   failSafeLimp(defaultFailSafeLimp),
   powerLimit(defaultPowerLimit),
@@ -39,28 +39,28 @@ HitecDSettings::HitecDSettings() :
   sensitivityRatio(defaultSensitivityRatio)
 { }
 
-int16_t HitecDSettings::defaultRangeLeftRawAngle(int modelNumber) {
+int16_t HitecDSettings::defaultRangeLeftAPV(int modelNumber) {
   switch (modelNumber) {
     case 485: return 3381;
     default: return -1;
   }
 }
 
-int16_t HitecDSettings::defaultRangeCenterRawAngle(int modelNumber) {
+int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
   switch (modelNumber) {
     case 485: return 8192;
     default: return -1;
   }
 }
 
-int16_t HitecDSettings::defaultRangeRightRawAngle(int modelNumber) {
+int16_t HitecDSettings::defaultRangeRightAPV(int modelNumber) {
   switch (modelNumber) {
     case 485: return 13002;
     default: return -1;
   }
 }
 
-int16_t HitecDSettings::safeMinRawAngle(int modelNumber) {
+int16_t HitecDSettings::safeMinAPV(int modelNumber) {
   switch (modelNumber) {
     /* I measured 731, and added +50 as a margin of error */
     case 485: return 731 + 50;
@@ -68,8 +68,8 @@ int16_t HitecDSettings::safeMinRawAngle(int modelNumber) {
   }
 }
 
-int16_t HitecDSettings::safeMaxRawAngle(int modelNumber) {
-  int16_t min = safeMinRawAngle(modelNumber);
+int16_t HitecDSettings::safeMaxAPV(int modelNumber) {
+  int16_t min = safeMinAPV(modelNumber);
   if (min == -1) {
     return -1;
   }
@@ -105,19 +105,19 @@ int HitecDServo::attach(int _pin) {
     detach();
     return res;
   }
-  rangeLeftRawAngle = temp;
+  rangeLeftAPV = temp;
 
   if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
     detach();
     return res;
   }
-  rangeCenterRawAngle = temp;
+  rangeCenterAPV = temp;
 
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     detach();
     return res;
   }
-  rangeRightRawAngle = temp;
+  rangeRightAPV = temp;
 
   return HITECD_OK;
 }
@@ -151,27 +151,27 @@ int16_t HitecDServo::readCurrentMicroseconds() {
 }
 
 int16_t HitecDServo::readCurrentQuarterMicros() {
-  int16_t rawAngle = readCurrentRawAngle();
-  if (rawAngle < 0) {
-    return rawAngle;
+  int16_t currentAPV = readCurrentAPV();
+  if (currentAPV < 0) {
+    return currentAPV;
   }
-  if (rawAngle < rangeCenterRawAngle) {
-    return map(rawAngle, rangeLeftRawAngle, rangeCenterRawAngle, 4*850, 4*1500);
+  if (currentAPV < rangeCenterAPV) {
+    return map(currentAPV, rangeLeftAPV, rangeCenterAPV, 4*850, 4*1500);
   } else {
-    return map(rawAngle, rangeCenterRawAngle, rangeRightRawAngle, 4*1500, 4*2150);
+    return map(currentAPV, rangeCenterAPV, rangeRightAPV, 4*1500, 4*2150);
   }
 }
 
-int16_t HitecDServo::readCurrentRawAngle() {
+int16_t HitecDServo::readCurrentAPV() {
   if (!attached()) {
     return HITECD_ERR_NOT_ATTACHED;
   }
   int res;
-  uint16_t currentRawAngle;
-  if ((res = readRawRegister(0x0C, &currentRawAngle)) != HITECD_OK) {
+  uint16_t currentAPV;
+  if ((res = readRawRegister(0x0C, &currentAPV)) != HITECD_OK) {
     return res;
   }
-  return currentRawAngle;
+  return currentAPV;
 }
 
 int HitecDServo::readModelNumber() {
@@ -271,19 +271,19 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
     return HITECD_ERR_CONFUSED;
   }
 
-  /* Read rangeLeftRawAngle, rangeCenterRawAngle, rangeRightRawAngle */
+  /* Read rangeLeftAPV, rangeCenterAPV, rangeRightAPV */
   if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
     return res;
   }
-  settingsOut->rangeLeftRawAngle = rangeLeftRawAngle = temp;
+  settingsOut->rangeLeftAPV = rangeLeftAPV = temp;
   if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
     return res;
   }
-  settingsOut->rangeCenterRawAngle = rangeCenterRawAngle = temp;
+  settingsOut->rangeCenterAPV = rangeCenterAPV = temp;
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     return res;
   }
-  settingsOut->rangeRightRawAngle = rangeRightRawAngle = temp;
+  settingsOut->rangeRightAPV = rangeRightAPV = temp;
 
   /* Read failSafe and failSafeLimp. (A single register controls both.) */
   if ((res = readRawRegister(0x4C, &temp)) != HITECD_OK) {
@@ -436,42 +436,42 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
     }
   }
 
-  /* Write rangeLeftRawAngle, rangeCenterRawAngle, and rangeRightRawAngle. Also, update
+  /* Write rangeLeftAPV, rangeCenterAPV, and rangeRightAPV. Also, update
   the instance variables that we initialized in attach(). (If we're using the
   default values, then read them back into instance variables, so we have the
   correct default values.) */
-  if (settings.rangeLeftRawAngle != -1 &&
-      settings.rangeLeftRawAngle !=
-        HitecDSettings::defaultRangeLeftRawAngle(modelNumber)) {
-    writeRawRegister(0xB2, settings.rangeLeftRawAngle);
-    rangeLeftRawAngle = settings.rangeLeftRawAngle;
+  if (settings.rangeLeftAPV != -1 &&
+      settings.rangeLeftAPV !=
+        HitecDSettings::defaultRangeLeftAPV(modelNumber)) {
+    writeRawRegister(0xB2, settings.rangeLeftAPV);
+    rangeLeftAPV = settings.rangeLeftAPV;
   } else {
     if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
       return res;
     }
-    rangeLeftRawAngle = temp;
+    rangeLeftAPV = temp;
   }
-  if (settings.rangeCenterRawAngle != -1 &&
-      settings.rangeCenterRawAngle !=
-        HitecDSettings::defaultRangeCenterRawAngle(modelNumber)) {
-    writeRawRegister(0xC2, settings.rangeCenterRawAngle);
-    rangeCenterRawAngle = settings.rangeCenterRawAngle;
+  if (settings.rangeCenterAPV != -1 &&
+      settings.rangeCenterAPV !=
+        HitecDSettings::defaultRangeCenterAPV(modelNumber)) {
+    writeRawRegister(0xC2, settings.rangeCenterAPV);
+    rangeCenterAPV = settings.rangeCenterAPV;
   } else {
     if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
       return res;
     }
-    rangeCenterRawAngle = temp;
+    rangeCenterAPV = temp;
   }
-  if (settings.rangeRightRawAngle != -1 &&
-      settings.rangeRightRawAngle !=
-        HitecDSettings::defaultRangeRightRawAngle(modelNumber)) {
-    writeRawRegister(0xB0, settings.rangeRightRawAngle);
-    rangeRightRawAngle = settings.rangeRightRawAngle;
+  if (settings.rangeRightAPV != -1 &&
+      settings.rangeRightAPV !=
+        HitecDSettings::defaultRangeRightAPV(modelNumber)) {
+    writeRawRegister(0xB0, settings.rangeRightAPV);
+    rangeRightAPV = settings.rangeRightAPV;
   } else {
      if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
       return res;
     }
-    rangeRightRawAngle = temp;
+    rangeRightAPV = temp;
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */

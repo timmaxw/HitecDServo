@@ -15,6 +15,6 @@ void writeSettings();
 
 void useRangeMeasurementSettings();
 void undoRangeMeasurementSettings();
-void moveTempRawAngle(int16_t targetRawAngle, int16_t *actualRawAngle);
+void temporarilyMoveToAPV(int16_t targetAPV, int16_t *actualAPV);
 
 #endif /* Common_h */

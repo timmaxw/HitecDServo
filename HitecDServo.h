@@ -41,7 +41,7 @@ const char *hitecdErrToString(int err);
 struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.
 
-  `rangeLeftRawAngle`, `rangeCenterRawAngle`, and `rangeRightRawAngle` will be set to -1;
+  `rangeLeftAPV`, `rangeCenterAPV`, and `rangeRightAPV` will be set to -1;
   this isn't the factory-default value, but it will cause `writeSettings()` to
   keep the factory-default value. */
   HitecDSettings();
@@ -56,13 +56,13 @@ struct HitecDSettings {
   turn counterclockwise.
   
   Note: Switching the servo direction will invert the meaning of the
-  `rangeLeftRawAngle`, `rangeRightRawAngle`, and `rangeCenterRawAngle` settings. If
+  `rangeLeftAPV`, `rangeRightAPV`, and `rangeCenterAPV` settings. If
   you've changed those settings to non-default values, you can use the following
   formulas to convert between the clockwise values and equivalent
   counterclockwise values:
-    settings.rangeLeftRawAngle = 16383 - prevRangeRightRawAngle;
-    settings.rangeCenterRawAngle = 16383 - prevRangeCenterRawAngle;
-    settings.rangeRightRawAngle = 16383 - prevRangeLeftRawAngle;
+    settings.rangeLeftAPV = 16383 - prevRangeRightAPV;
+    settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
+    settings.rangeRightAPV = 16383 - prevRangeLeftAPV;
   */
   bool counterclockwise;
   static const bool defaultCounterclockwise = false;
@@ -88,34 +88,44 @@ struct HitecDSettings {
   int8_t softStart;
   static const int8_t defaultSoftStart = 20;
 
-  /* `rangeLeftRawAngle`, `rangeCenterRawAngle` and `rangeRightRawAngle` define how servo
-  pulse widths are related to physical servo angle:
-  - `rangeLeftRawAngle` defines the angle for a 850us pulse (left endpoint)
-  - `rangeCenterRawAngle` defines the angle for a 1500us pulse (center point)
-  - `rangeRightRawAngle` defines the angle for a 2150us pulse (right endpoint)
+  /* `rangeLeftAPV`, `rangeCenterAPV` and `rangeRightAPV` define the servo's
+  physical range of motion.
+  
+  Internally, the D-series servos measure the physical servo angle using a
+  potentiometer. The angle potentiometer's values are represented as numbers
+  from 0 to 16383 (=2**14-1). In this library, the abbreviation "APV" stands for
+  "Angle Potentiometer Value".
 
-  Raw angles are defined by numbers ranging from 0 to 16383 (=2**14-1). If
-  `counterclockwise=false`, higher numbers are clockwise. But if
-  `counterclockwise=true`, higher numbers are counterclockwise. This means that
-  `rangeLeftRawAngle < rangeCenterRawAngle < rangeRightRawAngle` regardless of the value
-  of `counterclockwise`.
+  PWM pulse widths are related to APVs as follows:
+  - If the servo receives a 850us pulse, it will move to `rangeLeftAPV`.
+  - If the servo receives a 1500us pulse, it will move to `rangeCenterAPV`.
+  - If the servo receives a 2150us pulse, it will move to `rangeRightAPV`.
+  - In between, the servo will interpolate.
 
-  If you call writeSettings() with these values set to -1, then the
-  factory-default values will be kept. */
-  int16_t rangeLeftRawAngle, rangeCenterRawAngle, rangeRightRawAngle;
+  Note that APVs depend on the servo's direction. If `counterclockwise=false`,
+  higher APVs are clockwise. But if `counterclockwise=true`, higher APVs are
+  counterclockwise. This means `rangeLeftAPV < rangeCenterAPV < rangeRightAPV`
+  regardless of the servo's direction. But when `counterclockwise=true`, this
+  means that the `rangeLeftAPV` is actually the clockwise-most end of the range,
+  and `rangeRightAPV` is the counterclockwise-most end of the range.
 
-  /* Convenience functions to return the factory-default raw angles for the
+  If you call `writeSettings()` with `rangeLeftAPV`, `rangeRightAPV`, or
+  `rangeCenterAPV` set to -1, then the factory-default value will be used. */
+  int16_t rangeLeftAPV, rangeCenterAPV, rangeRightAPV;
+
+  /* Convenience functions to return the factory-default range APVs for the
   given servo model. Right now this only works for the D485HW; other models will
   return -1. */
-  static int16_t defaultRangeLeftRawAngle(int modelNumber);
-  static int16_t defaultRangeCenterRawAngle(int modelNumber);
-  static int16_t defaultRangeRightRawAngle(int modelNumber);
+  static int16_t defaultRangeLeftAPV(int modelNumber);
+  static int16_t defaultRangeCenterAPV(int modelNumber);
+  static int16_t defaultRangeRightAPV(int modelNumber);
 
-  /* Convenience functions to return the min/max raw angles that the servo
-  can be safely driven to without hitting physical stops. (This may vary
-  slightly from servo to servo; these are conservative values.) */
-  static int16_t safeMinRawAngle(int modelNumber);
-  static int16_t safeMaxRawAngle(int modelNumber);
+  /* Convenience functions to return the min/max APVs that the servo can be
+  safely driven to without hitting physical stops. This may vary slightly from
+  servo to servo; these are conservative values. Right now this only works for
+  the D485HW; other models will return -1. */
+  static int16_t safeMinAPV(int modelNumber);
+  static int16_t safeMaxAPV(int modelNumber);
 
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
@@ -187,7 +197,7 @@ public:
   but expressed in different units. */
   int16_t readCurrentMicroseconds();
   int16_t readCurrentQuarterMicros();
-  int16_t readCurrentRawAngle();
+  int16_t readCurrentAPV();
 
   /* Returns the servo's model number, e.g. 485 for a D485HW model. */
   int readModelNumber();
@@ -227,7 +237,7 @@ private:
   volatile uint8_t *pinInputRegister, *pinOutputRegister;
 
   int modelNumber;
-  int16_t rangeLeftRawAngle, rangeCenterRawAngle, rangeRightRawAngle;
+  int16_t rangeLeftAPV, rangeCenterAPV, rangeRightAPV;
 };
 
 #endif /* HitecDServo_h */
