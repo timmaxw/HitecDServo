@@ -401,12 +401,16 @@ void changePowerLimitSetting() {
     HitecDServoConfig::defaultPowerLimit);
 
   Serial.println(F(
-    "Enter new power limit from 1 to 2000 (or nothing to cancel):"));
+    "Warning: Power limit is an undocumented setting, not supported by\r\n"
+    "Hitec's official programmers. Use at your own risk."));
+
+  Serial.println(F(
+    "Enter new power limit from 0 to 100 (or nothing to cancel):"));
   int16_t newPowerLimit;
   if (!scanNumber(&newPowerLimit) || newPowerLimit == config.powerLimit) {
     goto cancel;
   }
-  if (newPowerLimit < 1 || newPowerLimit > 2000) {
+  if (newPowerLimit < 0 || newPowerLimit > 100) {
     Serial.println(F("Error: Invalid power limit."));
     goto cancel;
   }

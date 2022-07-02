@@ -307,9 +307,10 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
     return res;
   }
   if (temp == 0x0FFF) {
-    configOut->powerLimit = 2000;
+    configOut->powerLimit = 100;
   } else {
-    configOut->powerLimit = temp;
+    /* Divide rounding up, so nonzero values stay nonzero */
+    configOut->powerLimit = (temp + 19) / 20;
   }
 
   /* Read overloadProtection */
@@ -482,7 +483,7 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
 
   /* Write powerLimit */
   if (config.powerLimit != HitecDServoConfig::defaultPowerLimit) {
-    writeRawRegister(0x56, config.powerLimit);
+    writeRawRegister(0x56, config.powerLimit * 20);
   }
 
   /* Write overloadProtection */
@@ -525,10 +526,13 @@ int HitecDServo::writeConfigUnsupportedModelThisMightDamageTheServo(
 
   /* After the servo resets itself, it won't respond to any commands for 1
   second. */
+  /* TODO: Instead of this delay, detect servo is booting and report better
+  errors. */
   delay(1000);
 
   /* I don't know what writing 0x1000 to 0x22 does, but the HPC-11 does it after
   some settings changes, so we do it too, just to be safe. */
+  /* TODO: Probably remove this. */
   writeRawRegister(0x22, 0x1000);
 
   return HITECD_OK;
