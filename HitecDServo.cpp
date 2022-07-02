@@ -329,19 +329,19 @@ int HitecDServo::readConfig(HitecDServoConfig *configOut) {
   if ((res = readRawRegister(0x6C, &temp0x6C)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x6C, &temp0x44)) != HITECD_OK) {
+  if ((res = readRawRegister(0x44, &temp0x44)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x6C, &temp0xD4)) != HITECD_OK) {
+  if ((res = readRawRegister(0xD4, &temp0xD4)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x6C, &temp0xD6)) != HITECD_OK) {
+  if ((res = readRawRegister(0xD6, &temp0xD6)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x6C, &temp0x8A)) != HITECD_OK) {
+  if ((res = readRawRegister(0x8A, &temp0x8A)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x6C, &temp0x8C)) != HITECD_OK) {
+  if ((res = readRawRegister(0x8C, &temp0x8C)) != HITECD_OK) {
     return res;
   }
   if (temp0x6C == temp0xD4 && temp0x44 == temp0xD6) {
