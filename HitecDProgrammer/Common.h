@@ -25,7 +25,8 @@ int16_t widestRangeLeftAPV();
 int16_t widestRangeRightAPV();
 int16_t widestRangeCenterAPV();
 
-void printErr(int res, bool needReset);
+void printErr(int res, bool fatal);
+void fatalErr();
 void printValueWithDefault(int16_t value, int16_t defaultValue);
 void writeSettings();
 

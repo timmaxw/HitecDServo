@@ -64,9 +64,28 @@ void setup() {
   Serial.begin(115200);
 
   int16_t pin;
-  do {
-    Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
-  } while (!scanNumber(&pin, PRINT_IF_EMPTY));
+  Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
+  if (!scanNumber(&pin, PRINT_IF_EMPTY)) {
+    fatalErr();
+  }
+
+#if defined(ARDUINO_AVR_DUEMILANOVE) || \
+    defined(ARDUINO_AVR_MEGA) || \
+    defined(ARDUINO_AVR_MEGA2560) || \
+    defined(ARDUINO_AVR_MICRO) || \
+    defined(ARDUINO_AVR_MINI) || \
+    defined(ARDUINO_AVR_NANO) || \
+    defined(ARDUINO_AVR_UNO)
+  /* The above boards all use pins 0 and 1 for serial communication. Catch a
+  common (and potentially _very_ confusing) error */
+  if (pin == 0 || pin == 1) {
+    Serial.println(F(
+      "Error: Can't use pin 0 or 1 because those are needed for serial\r\n"
+      "communication with the computer over USB."));
+    fatalErr();
+  }
+#endif
+
   Serial.println(F("Connecting to servo..."));
   if ((res = servo.attach(pin)) != HITECD_OK) {
     printErr(res, true);

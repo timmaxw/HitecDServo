@@ -45,7 +45,12 @@ int16_t widestRangeCenterAPV() {
 
 bool usingRangeMeasurementSettings = false;
 
-void printErr(int res, bool needReset) {
+void fatalErr() {
+  Serial.println(F("Please fix the problem and then reset your Arduino."));
+  while (true) { }
+}
+
+void printErr(int res, bool fatal) {
   if (res == HITECD_OK) {
     return;
   }
@@ -53,9 +58,8 @@ void printErr(int res, bool needReset) {
   Serial.print(F("Error: "));
   Serial.println(hitecdErrToString(res));
 
-  if (needReset) {
-    Serial.println(F("Please fix the problem and then reset your Arduino."));
-    while (true) { }
+  if (fatal) {
+    fatalErr();
   }
 }
 

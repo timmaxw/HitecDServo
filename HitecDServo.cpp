@@ -642,6 +642,8 @@ void HitecDServo::writeRawRegister(uint8_t reg, uint16_t val) {
   delay(1);
 }
 
+#ifdef ARDUINO_ARCH_AVR
+
 /* We're bit-banging a 115200 baud serial connection, so we need precise timing.
 The AVR libraries have a macro _delay_us() that delays a precise number of
 microseconds, using compile-time floating-point math. However, we also need to
@@ -703,4 +705,8 @@ void HitecDServo::writeByte(uint8_t val) {
   *pinOutputRegister &= ~pinBitMask;
   DELAY_US_COMPENSATED(8.68, 25);
 }
+
+#else
+#error "HitecDServo library only works on AVR processors."
+#endif
 
