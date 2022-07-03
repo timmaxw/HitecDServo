@@ -10,15 +10,20 @@ extern HitecDSettings settings;
 /* For supported models, the library knows these values. But for unsupported
 models, we can only discover them experimentally. These variables will be set
 to -1 if not known, or to a specific value if known either via the library or
-via experiment.
-Note: widestRangeLeftAPV/etc. always follow a clockwise convention. So if
-the servo is in counterclockwise mode, we have to invert them. */
+via experiment. */
 extern int16_t defaultRangeLeftAPV;
 extern int16_t defaultRangeRightAPV;
 extern int16_t defaultRangeCenterAPV;
-extern int16_t widestRangeLeftAPV;
-extern int16_t widestRangeRightAPV;
-extern int16_t widestRangeCenterAPV;
+
+/* More values that can be known either statically or experimentally. Note, the
+variables always follow a clockwise convention. The functions dynamically
+convert based on the value of settings.counterclockwise. */
+extern int16_t widestRangeLeftAPVClockwise;
+extern int16_t widestRangeRightAPVClockwise;
+extern int16_t widestRangeCenterAPVClockwise;
+int16_t widestRangeLeftAPV();
+int16_t widestRangeRightAPV();
+int16_t widestRangeCenterAPV();
 
 void printErr(int res, bool needReset);
 void printValueWithDefault(int16_t value, int16_t defaultValue);

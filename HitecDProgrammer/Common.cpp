@@ -10,9 +10,38 @@ HitecDSettings settings;
 int16_t defaultRangeLeftAPV = -1;
 int16_t defaultRangeRightAPV = -1;
 int16_t defaultRangeCenterAPV = -1;
-int16_t widestRangeLeftAPV = -1;
-int16_t widestRangeRightAPV = -1;
-int16_t widestRangeCenterAPV = -1;
+
+int16_t widestRangeLeftAPVClockwise = -1;
+int16_t widestRangeRightAPVClockwise = -1;
+int16_t widestRangeCenterAPVClockwise = -1;
+
+int16_t widestRangeLeftAPV() {
+  if (widestRangeLeftAPVClockwise == -1) {
+    return -1;
+  } else if (!settings.counterclockwise) {
+    return widestRangeLeftAPVClockwise;
+  } else {
+    return 16383 - widestRangeRightAPVClockwise;
+  }
+}
+int16_t widestRangeRightAPV() {
+  if (widestRangeRightAPVClockwise == -1) {
+    return -1;
+  } else if (!settings.counterclockwise) {
+    return widestRangeRightAPVClockwise;
+  } else {
+    return 16383 - widestRangeLeftAPVClockwise;
+  }
+}
+int16_t widestRangeCenterAPV() {
+  if (widestRangeCenterAPVClockwise == -1) {
+    return -1;
+  } else if (!settings.counterclockwise) {
+    return widestRangeCenterAPVClockwise;
+  } else {
+    return 16383 - widestRangeCenterAPVClockwise;
+  }
+}
 
 bool usingRangeMeasurementSettings = false;
 

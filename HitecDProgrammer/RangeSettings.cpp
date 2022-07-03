@@ -27,7 +27,7 @@ bool changeRangeSettingsDefault() {
   printRangeCenterAPVSetting();
 
   Serial.println(F(
-    "Change range settings to defaults? Enter \"y\" or \"n\":"));
+    "Change range settings to factory defaults? Enter \"y\" or \"n\":"));
   if (!scanYesNo()) {
     return false;
   }
@@ -62,39 +62,26 @@ bool changeRangeSettingsWidest() {
     }
   }
 
-  /* Note widestRangeLeftAPV/etc. always follow a clockwise convention. So if
-  the servo is in counterclockwise mode, we have to invert them. */
-  int16_t left, right, center;
-  if (!settings.counterclockwise) {
-    left = widestRangeLeftAPV;
-    right = widestRangeRightAPV;
-    center = widestRangeCenterAPV;
-  } else {
-    left = 16383 - widestRangeRightAPV;
-    right = 16383 - widestRangeLeftAPV;
-    center = 16383 - widestRangeCenterAPV;
-  }
-
   printRangeLeftAPVSetting();
   Serial.print(F("Widest range left endpoint, as APV: "));
-  Serial.println(left);
+  Serial.println(widestRangeLeftAPV());
 
   printRangeRightAPVSetting();
   Serial.print(F("Widest range right endpoint, as APV: "));
-  Serial.println(right);
+  Serial.println(widestRangeRightAPV());
 
   printRangeCenterAPVSetting();
   Serial.print(F("Widest range center point, as APV: "));
-  Serial.println(center);
+  Serial.println(widestRangeCenterAPV());
 
   Serial.println(F("Change to widest range? Enter \"y\" or \"n\":"));
   if (!scanYesNo()) {
     return false;
   }
 
-  settings.rangeLeftAPV = left;
-  settings.rangeRightAPV = right;
-  settings.rangeCenterAPV = center;
+  settings.rangeLeftAPV = widestRangeLeftAPV();
+  settings.rangeRightAPV = widestRangeRightAPV();
+  settings.rangeCenterAPV = widestRangeCenterAPV();
   writeSettings();
   return true;
 }
@@ -247,6 +234,27 @@ bool changeRangeSettingsAPVHelper(int16_t *newAPVOut) {
     Serial.println(F("Error: Invalid APV."));
     return false;
   }
+
+  if (widestRangeLeftAPV() != -1) {
+    int16_t safeAPV = constrain(
+      *newAPVOut, widestRangeLeftAPV(), widestRangeRightAPV());
+    if (safeAPV != *newAPVOut) {
+      Serial.print(F("Warning: "));
+      Serial.print(*newAPVOut);
+      Serial.print(F(" is beyond the recommended limit of "));
+      Serial.print(safeAPV);
+      Serial.println('.');
+      Serial.println(F(
+        "If you command the servo to move past the recommended limit, it\r\n"
+        "may hit a physical end-stop and burn itself out. Use recommended\r\n"
+        "limit instead? Enter \"y\" or \"n\":"));
+      if (scanYesNo()) {
+        *newAPVOut = safeAPV;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool changeRangeSettingsAPV() {

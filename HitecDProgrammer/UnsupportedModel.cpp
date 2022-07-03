@@ -81,23 +81,24 @@ void printDiagnosticsForUnsupportedModel() {
     center = (left + right) / 2;
     undoRangeMeasurementSettings();
 
-    /* Note widestRangeLeftAPV/etc. always follow a clockwise convention. So if
-    the servo is in counterclockwise mode, we have to invert them. */
+    /* Note widestRangeLeftAPVClockwise/etc. always follow a clockwise
+    convention. So if the servo is in counterclockwise mode, we have to invert
+    them. */
     if (!settings.counterclockwise) {
-      widestRangeLeftAPV = left;
-      widestRangeRightAPV = right;
-      widestRangeCenterAPV = center;
+      widestRangeLeftAPVClockwise = left;
+      widestRangeRightAPVClockwise = right;
+      widestRangeCenterAPVClockwise = center;
     } else {
-      widestRangeLeftAPV = 16383 - right;
-      widestRangeRightAPV = 16383 - left;
-      widestRangeCenterAPV = 16383 - center;
+      widestRangeLeftAPVClockwise = 16383 - right;
+      widestRangeRightAPVClockwise = 16383 - left;
+      widestRangeCenterAPVClockwise = 16383 - center;
     }
 
     Serial.println(F("Please include the following in the issue report:"));
-    Serial.print(F("left="));
-    Serial.println(left);
-    Serial.print(F("right="));
-    Serial.println(right);
+    Serial.print(F("widestRangeLeftAPVClockwise="));
+    Serial.println(widestRangeLeftAPVClockwise);
+    Serial.print(F("widestRangeRightAPVClockwise="));
+    Serial.println(widestRangeRightAPVClockwise);
 
   } else {
     Serial.println(F("OK, servo will not be moved."));

@@ -83,12 +83,18 @@ void setup() {
   Serial.println(modelNumber, DEC);
 
   if (servo.isModelSupported()) {
-    defaultRangeLeftAPV = HitecDSettings::defaultRangeLeftAPV(modelNumber);
-    defaultRangeRightAPV = HitecDSettings::defaultRangeRightAPV(modelNumber);
-    defaultRangeCenterAPV = HitecDSettings::defaultRangeCenterAPV(modelNumber);
-    widestRangeLeftAPV = HitecDSettings::widestRangeLeftAPV(modelNumber);
-    widestRangeRightAPV = HitecDSettings::widestRangeRightAPV(modelNumber);
-    widestRangeCenterAPV = HitecDSettings::widestRangeCenterAPV(modelNumber);
+    defaultRangeLeftAPV =
+      HitecDSettings::defaultRangeLeftAPV(modelNumber);
+    defaultRangeRightAPV =
+      HitecDSettings::defaultRangeRightAPV(modelNumber);
+    defaultRangeCenterAPV =
+      HitecDSettings::defaultRangeCenterAPV(modelNumber);
+    widestRangeLeftAPVClockwise =
+      HitecDSettings::widestRangeLeftAPV(modelNumber);
+    widestRangeRightAPVClockwise =
+      HitecDSettings::widestRangeRightAPV(modelNumber);
+    widestRangeCenterAPVClockwise =
+      HitecDSettings::widestRangeCenterAPV(modelNumber);
   } else {
     printDiagnosticsForUnsupportedModel();
   }
