@@ -29,14 +29,8 @@ void resetSettingsToFactoryDefaults() {
   printSettings();
 
   Serial.println(F(
-    "Reset all settings to factory defaults? Enter \"Yes\" or \"No\":"));
-  scanRawInput();
-  if (parseWord("Yes")) {
-    (void)0;
-  } else if (parseWord("No") || rawInputLen == 0) {
-    goto cancel;
-  } else {
-    Serial.println(F("Error: You did not enter \"Yes\" or \"No\"."));
+    "Reset all settings to factory defaults? Enter \"y\" or \"n\":"));
+  if (!scanYesNo()) {
     goto cancel;
   }
   if (!checkSupportedModel()) {
@@ -45,6 +39,15 @@ void resetSettingsToFactoryDefaults() {
 
   settings = HitecDSettings();
   writeSettings();
+
+  if (!servo.isModelSupported()) {
+    /* The servo library doesn't know the default values of rangeLeftAPV/etc.,
+    but we just reset the servo, so we know the current values must be the
+    default values. Record those values. */
+    defaultRangeLeftAPV = settings.rangeLeftAPV;
+    defaultRangeRightAPV = settings.rangeRightAPV;
+    defaultRangeCenterAPV = settings.rangeCenterAPV;
+  }
 
   Serial.println(F("New servo settings:"));
   printSettings();
@@ -76,7 +79,14 @@ void setup() {
   Serial.print("Servo model: D");
   Serial.println(modelNumber, DEC);
 
-  if (!servo.isModelSupported()) {
+  if (servo.isModelSupported()) {
+    defaultRangeLeftAPV = HitecDSettings::defaultRangeLeftAPV(modelNumber);
+    defaultRangeRightAPV = HitecDSettings::defaultRangeRightAPV(modelNumber);
+    defaultRangeCenterAPV = HitecDSettings::defaultRangeCenterAPV(modelNumber);
+    widestRangeLeftAPV = HitecDSettings::widestRangeLeftAPV(modelNumber);
+    widestRangeRightAPV = HitecDSettings::widestRangeRightAPV(modelNumber);
+    widestRangeCenterAPV = HitecDSettings::widestRangeCenterAPV(modelNumber);
+  } else {
     printDiagnosticsForUnsupportedModel();
   }
 

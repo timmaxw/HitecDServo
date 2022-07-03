@@ -78,8 +78,28 @@ void printDiagnosticsForUnsupportedModel() {
   }
 
   Serial.println(F(
-    "If you had already changed the values of any settings, please note\r\n"
-    "them in the issue. Thanks!\r\n"));
+    "Is it OK to move the servo to detect the physical range of motion?\r\n"
+    "Make sure nothing is attached to the servo horn. Enter \"y\" or \"n\":"));
+  if (scanYesNo()) {
+    useRangeMeasurementSettings();
+    Serial.println(F("Moving left as far as possible..."));
+    temporarilyMoveToAPV(50, &widestRangeLeftAPV);
+    Serial.println(F("Moving right as far as possible..."));
+    temporarilyMoveToAPV(16333, &widestRangeRightAPV);
+    widestRangeCenterAPV = (widestRangeLeftAPV + widestRangeRightAPV) / 2;
+    undoRangeMeasurementSettings();
+    Serial.println(F("Please include the following in the issue report:"));
+    Serial.print(F("widestRangeLeftAPV="));
+    Serial.println(widestRangeLeftAPV);
+    Serial.print(F("widestRangeRightAPV="));
+    Serial.println(widestRangeRightAPV);
+  } else {
+    Serial.println(F("OK, servo will not be moved."));
+  }
+
+  Serial.println(F(
+    "If you had already changed the values of any settings, please also\r\n"
+    "note those changes in the issue. Thanks!\r\n"));
   Serial.println(F("Press enter to continue..."));
   scanRawInput(NO_ECHO);
   Serial.println(F(

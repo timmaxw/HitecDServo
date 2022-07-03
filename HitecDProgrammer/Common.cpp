@@ -1,10 +1,19 @@
 #include "Common.h"
 
 #include "CommandLine.h"
+#include "UnsupportedModel.h"
 
 HitecDServo servo;
 int modelNumber;
 HitecDSettings settings;
+
+int16_t defaultRangeLeftAPV = -1;
+int16_t defaultRangeRightAPV = -1;
+int16_t defaultRangeCenterAPV = -1;
+int16_t widestRangeLeftAPV = -1;
+int16_t widestRangeRightAPV = -1;
+int16_t widestRangeCenterAPV = -1;
+
 bool usingRangeMeasurementSettings = false;
 
 void printErr(int res, bool needReset) {
@@ -29,6 +38,8 @@ void printValueWithDefault(int16_t value, int16_t defaultValue) {
     Serial.print(F(" (default is "));
     Serial.print(defaultValue, DEC);
     Serial.println(')');
+  } else {
+    Serial.println(F(" (default unknown)"));
   }
 }
 

@@ -6,20 +6,17 @@
 
 void printRangeLeftAPVSetting() {
   Serial.print(F("Current left endpoint of range, as APV: "));
-  printValueWithDefault(settings.rangeLeftAPV,
-    HitecDSettings::defaultRangeLeftAPV(modelNumber));
+  printValueWithDefault(settings.rangeLeftAPV, defaultRangeLeftAPV);
 }
 
 void printRangeRightAPVSetting() {
   Serial.print(F("Current right endpoint of range, as APV: "));
-  printValueWithDefault(settings.rangeRightAPV,
-    HitecDSettings::defaultRangeRightAPV(modelNumber));
+  printValueWithDefault(settings.rangeRightAPV, defaultRangeRightAPV);
 }
 
 void printRangeCenterAPVSetting() {
   Serial.print(F("Current center point of range, as APV: "));
-  printValueWithDefault(settings.rangeCenterAPV,
-    HitecDSettings::defaultRangeCenterAPV(modelNumber));
+  printValueWithDefault(settings.rangeCenterAPV, defaultRangeCenterAPV);
 }
 
 bool changeRangeSettingsDetect(); // forward declaration
@@ -39,14 +36,21 @@ bool changeRangeSettingsDefault() {
   settings.rangeRightAPV = -1;
   settings.rangeCenterAPV = -1;
   writeSettings();
+
+  if (!servo.isModelSupported()) {
+    /* The servo library doesn't know the default values of rangeLeftAPV/etc.,
+    but we just reset the servo, so we know the current values must be the
+    default values. Record those values. */
+    defaultRangeLeftAPV = settings.rangeLeftAPV;
+    defaultRangeRightAPV = settings.rangeRightAPV;
+    defaultRangeCenterAPV = settings.rangeCenterAPV;
+  }
+
   return true;
 }
 
 bool changeRangeSettingsWidest() {
-  int16_t left = HitecDSettings::widestRangeLeftAPV(modelNumber);
-  int16_t right = HitecDSettings::widestRangeRightAPV(modelNumber);
-  int16_t center = HitecDSettings::widestRangeCenterAPV(modelNumber);
-  if (left == -1 || right == -1 || center == -1) {
+  if (widestRangeLeftAPV == -1) {
     Serial.println(F(
       "Error: The HitecDServo library does not know the widest range for\r\n"
       "your servo model. Do you want to detect how far the servo can move\r\n"
@@ -60,24 +64,24 @@ bool changeRangeSettingsWidest() {
 
   printRangeLeftAPVSetting();
   Serial.print(F("Widest range left endpoint, as APV: "));
-  Serial.println(left);
+  Serial.println(widestRangeLeftAPV);
 
   printRangeRightAPVSetting();
   Serial.print(F("Widest range right endpoint, as APV: "));
-  Serial.println(right);
+  Serial.println(widestRangeRightAPV);
 
   printRangeCenterAPVSetting();
   Serial.print(F("Widest range center point, as APV: "));
-  Serial.println(center);
+  Serial.println(widestRangeCenterAPV);
 
   Serial.println(F("Change to widest range? Enter \"y\" or \"n\":"));
   if (!scanYesNo()) {
     return false;
   }
 
-  settings.rangeLeftAPV = left;
-  settings.rangeRightAPV = right;
-  settings.rangeCenterAPV = center;
+  settings.rangeLeftAPV = widestRangeLeftAPV;
+  settings.rangeRightAPV = widestRangeRightAPV;
+  settings.rangeCenterAPV = widestRangeCenterAPV;
   writeSettings();
   return true;
 }
