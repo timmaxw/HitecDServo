@@ -13,18 +13,9 @@ bool checkSupportedModel() {
   Serial.println(F(
     "Warning: Your servo model is not fully supported. Changing the\r\n"
     "settings may lead to unexpected behavior or even damage the servo.\r\n"
-    "Proceed at your own risk. If you want to proceed, please enter\r\n"
-    "\"This might damage the servo\" exactly (or enter nothing to cancel):"));
-  scanRawInput();
-  if (parseWord("This might damage the servo")) {
-    allowUnsupportedModel = true;
-    return true;
-  } else if (rawInputLen == 0) {
-    return false;
-  } else {
-    Serial.println(F("You did not enter \"This might damage the servo\"."));
-    return false;
-  }
+    "Proceed anyway? Enter \"y\" or \"n\":"));
+  allowUnsupportedModel = scanYesNo();
+  return allowUnsupportedModel;
 }
 
 void printDiagnosticsForUnsupportedModel() {
