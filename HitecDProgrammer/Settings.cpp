@@ -69,13 +69,14 @@ void changeDirectionSetting() {
   }
 
   settings.counterclockwise = newCounterclockwise;
-  int16_t prevAPVFor850 = settings.rangeLeftAPV;
-  int16_t prevAPVFor1500 = settings.rangeCenterAPV;
-  int16_t prevAPVFor2150 = settings.rangeRightAPV;
-  settings.rangeLeftAPV = 16383 - prevAPVFor2150;
-  settings.rangeCenterAPV = 16383 - prevAPVFor1500;
-  settings.rangeRightAPV = 16383 - prevAPVFor850;
-  // TODO: Print new raw angles
+
+  int16_t prevRangeLeftAPV = settings.rangeLeftAPV;
+  int16_t prevRangeRightAPV = settings.rangeRightAPV;
+  int16_t prevRangeCenterAPV = settings.rangeCenterAPV;
+  settings.rangeLeftAPV = 16383 - prevRangeRightAPV;
+  settings.rangeRightAPV = 16383 - prevRangeLeftAPV;
+  settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
+
   writeSettings();
   return;
 

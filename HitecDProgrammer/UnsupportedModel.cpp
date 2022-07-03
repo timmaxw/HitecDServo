@@ -81,18 +81,33 @@ void printDiagnosticsForUnsupportedModel() {
     "Is it OK to move the servo to detect the physical range of motion?\r\n"
     "Make sure nothing is attached to the servo horn. Enter \"y\" or \"n\":"));
   if (scanYesNo()) {
+    int16_t left, right, center;
     useRangeMeasurementSettings();
     Serial.println(F("Moving left as far as possible..."));
-    temporarilyMoveToAPV(50, &widestRangeLeftAPV);
+    temporarilyMoveToAPV(50, &left);
     Serial.println(F("Moving right as far as possible..."));
-    temporarilyMoveToAPV(16333, &widestRangeRightAPV);
-    widestRangeCenterAPV = (widestRangeLeftAPV + widestRangeRightAPV) / 2;
+    temporarilyMoveToAPV(16333, &right);
+    center = (left + right) / 2;
     undoRangeMeasurementSettings();
+
+    /* Note widestRangeLeftAPV/etc. always follow a clockwise convention. So if
+    the servo is in counterclockwise mode, we have to invert them. */
+    if (!settings.counterclockwise) {
+      widestRangeLeftAPV = left;
+      widestRangeRightAPV = right;
+      widestRangeCenterAPV = center;
+    } else {
+      widestRangeLeftAPV = 16383 - right;
+      widestRangeRightAPV = 16383 - left;
+      widestRangeCenterAPV = 16383 - center;
+    }
+
     Serial.println(F("Please include the following in the issue report:"));
-    Serial.print(F("widestRangeLeftAPV="));
-    Serial.println(widestRangeLeftAPV);
-    Serial.print(F("widestRangeRightAPV="));
-    Serial.println(widestRangeRightAPV);
+    Serial.print(F("left="));
+    Serial.println(left);
+    Serial.print(F("right="));
+    Serial.println(right);
+
   } else {
     Serial.println(F("OK, servo will not be moved."));
   }

@@ -62,26 +62,39 @@ bool changeRangeSettingsWidest() {
     }
   }
 
+  /* Note widestRangeLeftAPV/etc. always follow a clockwise convention. So if
+  the servo is in counterclockwise mode, we have to invert them. */
+  int16_t left, right, center;
+  if (!settings.counterclockwise) {
+    left = widestRangeLeftAPV;
+    right = widestRangeRightAPV;
+    center = widestRangeCenterAPV;
+  } else {
+    left = 16383 - widestRangeRightAPV;
+    right = 16383 - widestRangeLeftAPV;
+    center = 16383 - widestRangeCenterAPV;
+  }
+
   printRangeLeftAPVSetting();
   Serial.print(F("Widest range left endpoint, as APV: "));
-  Serial.println(widestRangeLeftAPV);
+  Serial.println(left);
 
   printRangeRightAPVSetting();
   Serial.print(F("Widest range right endpoint, as APV: "));
-  Serial.println(widestRangeRightAPV);
+  Serial.println(right);
 
   printRangeCenterAPVSetting();
   Serial.print(F("Widest range center point, as APV: "));
-  Serial.println(widestRangeCenterAPV);
+  Serial.println(center);
 
   Serial.println(F("Change to widest range? Enter \"y\" or \"n\":"));
   if (!scanYesNo()) {
     return false;
   }
 
-  settings.rangeLeftAPV = widestRangeLeftAPV;
-  settings.rangeRightAPV = widestRangeRightAPV;
-  settings.rangeCenterAPV = widestRangeCenterAPV;
+  settings.rangeLeftAPV = left;
+  settings.rangeRightAPV = right;
+  settings.rangeCenterAPV = center;
   writeSettings();
   return true;
 }

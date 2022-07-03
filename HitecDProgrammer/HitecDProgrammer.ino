@@ -75,6 +75,9 @@ void setup() {
   if ((modelNumber = servo.readModelNumber()) < 0) {
     printErr(modelNumber, true);
   }
+  if ((res = servo.readSettings(&settings)) < 0) {
+    printErr(res, true);
+  }
 
   Serial.print("Servo model: D");
   Serial.println(modelNumber, DEC);
@@ -90,9 +93,6 @@ void setup() {
     printDiagnosticsForUnsupportedModel();
   }
 
-  if ((res = servo.readSettings(&settings)) < 0) {
-    printErr(res, true);
-  }
   printSettings();
 
   Serial.println(F(
