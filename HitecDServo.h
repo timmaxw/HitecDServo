@@ -15,9 +15,10 @@ codes are as follows: */
 /* No servo detected. */
 #define HITECD_ERR_NO_SERVO -2
 
-/* Missing pullup resistor. (Use a 2k resistor with a 5V microcontroller, or a
-1k resistor with a 3.3V microcontroller.) */
-#define HITECD_ERR_NO_PULLUP -3
+/* Either the servo is still booting (which takes 1000ms) or the pullup resistor
+is missing. (Use a 2k resistor with a 5V microcontroller, or a 1k resistor with
+a 3.3V microcontroller.) */
+#define HITECD_ERR_BOOTING_OR_NO_PULLUP -3
 
 /* Corrupt response from servo. */
 #define HITECD_ERR_CORRUPT -4
@@ -211,7 +212,11 @@ public:
   int readSettings(HitecDSettings *settingsOut);
 
   /* Resets the servo to its factory-default settings, then uploads the given
-  settings. Note: Right now, this only works for the D485HW model. Other models
+  settings, and reboots the servo. The servo will not respond to any commands
+  for 1000ms after rebooting; so after writeSettings() returns, make sure to
+  wait 1000ms before trying to do anything else with the servo.
+
+  Note: Right now, this only works for the D485HW model. Other models
   will return an error. */
   int writeSettings(const HitecDSettings &settings);
 

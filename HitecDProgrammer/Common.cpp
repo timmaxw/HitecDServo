@@ -75,7 +75,7 @@ void printValueWithDefault(int16_t value, int16_t defaultValue) {
   }
 }
 
-void writeSettings() {
+void saveSettings() {
   int res;
   Serial.println(F("Saving new servo settings..."));
 
@@ -90,6 +90,9 @@ void writeSettings() {
   if (res != HITECD_OK) {
     printErr(res, true);
   }
+
+  /* Wait for servo to reboot */
+  delay(1000);
 
   /* Read back the settings to make sure we have the latest values. */
   if ((res = servo.readSettings(&settings)) != HITECD_OK) {

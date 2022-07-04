@@ -28,6 +28,6 @@ int16_t widestRangeCenterAPV();
 void printErr(int res, bool fatal);
 void fatalErr();
 void printValueWithDefault(int16_t value, int16_t defaultValue);
-void writeSettings();
+void saveSettings();
 
 #endif /* Common_h */

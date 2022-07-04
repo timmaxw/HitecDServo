@@ -36,7 +36,7 @@ bool changeRangeSettingsDefault() {
   settings.rangeLeftAPV = -1;
   settings.rangeRightAPV = -1;
   settings.rangeCenterAPV = -1;
-  writeSettings();
+  saveSettings();
 
   if (!servo.isModelSupported()) {
     /* The servo library doesn't know the default values of rangeLeftAPV/etc.,
@@ -83,7 +83,7 @@ bool changeRangeSettingsWidest() {
   settings.rangeLeftAPV = widestRangeLeftAPV();
   settings.rangeRightAPV = widestRangeRightAPV();
   settings.rangeCenterAPV = widestRangeCenterAPV();
-  writeSettings();
+  saveSettings();
   return true;
 }
 
@@ -124,7 +124,7 @@ bool changeRangeSettingsDetect() {
   settings.rangeLeftAPV = left;
   settings.rangeRightAPV = right;
   settings.rangeCenterAPV = center;
-  writeSettings();
+  saveSettings();
   return true;
 }
 
@@ -144,7 +144,7 @@ bool saveRangeSettings(int16_t left, int16_t right, int16_t center) {
     settings.rangeRightAPV = left;
   }
   settings.rangeCenterAPV = center;
-  writeSettings();
+  saveSettings();
   return true;
 }
 

@@ -39,7 +39,7 @@ void resetSettingsToFactoryDefaults() {
   }
 
   settings = HitecDSettings();
-  writeSettings();
+  saveSettings();
 
   if (!servo.isModelSupported()) {
     /* The servo library doesn't know the default values of rangeLeftAPV/etc.,

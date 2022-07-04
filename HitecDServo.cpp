@@ -9,8 +9,9 @@ const char *hitecdErrToString(int err) {
       return "attach() was not called, or the call to attach() failed.";
     case HITECD_ERR_NO_SERVO:
       return "No servo detected.";
-    case HITECD_ERR_NO_PULLUP:
-      return "Missing pullup resistor.";
+    case HITECD_ERR_BOOTING_OR_NO_PULLUP:
+      return "Either the servo is still booting (which takes 1000ms) or the " \
+        "pullup resistor is missing.";
     case HITECD_ERR_CORRUPT:
       return "Corrupt response from servo.";
     case HITECD_ERR_UNSUPPORTED_MODEL:
@@ -535,16 +536,14 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
   some settings changes) */
   writeRawRegister(0x46, 0x0001);
 
-  /* After the servo resets itself, it won't respond to any commands for 1
-  second. */
-  /* TODO: Instead of this delay, detect servo is booting and report better
-  errors. */
-  delay(1000);
+  /* After writing to 0x46, the servo will take 1000ms to boot. During this
+  time, it won't respond to commands. The caller is responsible for waiting
+  1000ms before trying to issue any commands. */
 
-  /* I don't know what writing 0x1000 to 0x22 does, but the HPC-11 does it after
-  some settings changes, so we do it too, just to be safe. */
-  /* TODO: Probably remove this. */
-  writeRawRegister(0x22, 0x1000);
+  /* After 1000ms elapses, the HPC-11 writes 0x1000 to register 0x22. I'm not
+  sure what this is for; register 0x22 stores the calculated power limit (after
+  applying overload protection) and writing to it appears to have no effect.
+  This library doesn't write to register 0x22. */
 
   return HITECD_OK;
 }
@@ -565,8 +564,10 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
 
   delay(14);
 
-  /* Note, most of the pull-up force is actually provided by the 2k resistor;
-  the microcontroller pullup by itself is nowhere near strong enough. */
+  /* Note, most of the pull-up current must actually provided by an external
+  resistor; the microcontroller pullup by itself is nowhere near strong enough.
+  We use INPUT_PULLUP anyway because that lets us detect the absence of a servo
+  even if the pullup resistor is also absent. */
   pinMode(pin, INPUT_PULLUP);
 
   /* At this point, the servo should be pulling the pin low. If the pin goes
@@ -593,12 +594,16 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
   delay(1);
 
   /* At this point, the servo should have released the line, allowing the
-  2k resistor to pull it high. If the pin is not high, probably no resistor is
-  present. */
+  pullup resistor to pull it high. If the pin is not high, there are two
+  possible reasons this could happen:
+  1. The servo is booting. This takes 1 second from when the servo first
+     receives power, or is reset via register 0x46. During this time, it will
+     pull the line low and not respond to commands.
+  2. The pullup resistor is missing. */
   if (digitalRead(pin) != HIGH) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
-    return HITECD_ERR_NO_PULLUP;
+    return HITECD_ERR_BOOTING_OR_NO_PULLUP;
   }
 
   pinMode(pin, OUTPUT);
@@ -607,8 +612,8 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
 
   /* Note, readByte() can return HITECD_ERR_NO_SERVO if it times out. But, we
   know the servo is present, or else we'd have hit either HITECD_ERR_NO_SERVO or
-  HITECD_ERR_NO_PULLUP above. So this is unlikely to happen unless something's
-  horribly wrong. So for simplicity, we just round this off to
+  HITECD_ERR_BOOTING_OR_NO_PULLUP above. So this is unlikely to happen unless
+  something's horribly wrong. So for simplicity, we just round this off to
   HITECD_ERR_CORRUPT. */
 
   if (const0x69 != 0x69) return HITECD_ERR_CORRUPT;

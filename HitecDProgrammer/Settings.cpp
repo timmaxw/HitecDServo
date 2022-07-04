@@ -28,7 +28,7 @@ void changeIdSetting() {
   }
 
   settings.id = newId;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -81,7 +81,7 @@ void changeDirectionSetting() {
     settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
   }
 
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -112,7 +112,7 @@ void changeSpeedSetting() {
   }
 
   settings.speed = newSpeed;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -143,7 +143,7 @@ void changeDeadbandSetting() {
   }
 
   settings.deadband = newDeadband;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -174,7 +174,7 @@ void changeSoftStartSetting() {
   }
 
   settings.softStart = newSoftStart;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -227,7 +227,7 @@ void changeFailSafeSetting() {
 
   settings.failSafe = newFailSafe;
   settings.failSafeLimp = newFailSafeLimp;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -262,7 +262,7 @@ void changePowerLimitSetting() {
   }
 
   settings.powerLimit = newPowerLimit;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -307,7 +307,7 @@ void changeOverloadProtectionSetting() {
   }
 
   settings.overloadProtection = newOverloadProtection;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -347,7 +347,7 @@ void changeSmartSenseSetting() {
   }
 
   settings.smartSense = newSmartSense;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
@@ -384,7 +384,7 @@ void changeSensitivityRatioSetting() {
   }
 
   settings.sensitivityRatio = newSensitivityRatio;
-  writeSettings();
+  saveSettings();
   return;
 
 cancel:
