@@ -6,27 +6,23 @@
 #include "UnsupportedModel.h"
 
 void printRangeLeftAPVSetting() {
-  Serial.print(F("Current left endpoint of range, as APV: "));
+  Serial.print(F("Current range left endpoint: APV="));
   printValueWithDefault(settings.rangeLeftAPV, defaultRangeLeftAPV);
 }
 
 void printRangeRightAPVSetting() {
-  Serial.print(F("Current right endpoint of range, as APV: "));
+  Serial.print(F("Current range right endpoint: APV="));
   printValueWithDefault(settings.rangeRightAPV, defaultRangeRightAPV);
 }
 
 void printRangeCenterAPVSetting() {
-  Serial.print(F("Current center point of range, as APV: "));
+  Serial.print(F("Current range center point: APV="));
   printValueWithDefault(settings.rangeCenterAPV, defaultRangeCenterAPV);
 }
 
 bool changeRangeSettingsDetect(); // forward declaration
 
 bool changeRangeSettingsDefault() {
-  printRangeLeftAPVSetting();
-  printRangeRightAPVSetting();
-  printRangeCenterAPVSetting();
-
   Serial.println(F(
     "Change range settings to factory defaults? Enter \"y\" or \"n\":"));
   if (!scanYesNo()) {
@@ -63,16 +59,11 @@ bool changeRangeSettingsWidest() {
     }
   }
 
-  printRangeLeftAPVSetting();
-  Serial.print(F("Widest range left endpoint, as APV: "));
+  Serial.print(F("Widest range left endpoint: APV="));
   Serial.println(widestRangeLeftAPV());
-
-  printRangeRightAPVSetting();
-  Serial.print(F("Widest range right endpoint, as APV: "));
+  Serial.print(F("Widest range right endpoint: APV="));
   Serial.println(widestRangeRightAPV());
-
-  printRangeCenterAPVSetting();
-  Serial.print(F("Widest range center point, as APV: "));
+  Serial.print(F("Widest range center point: APV="));
   Serial.println(widestRangeCenterAPV());
 
   Serial.println(F("Change to widest range? Enter \"y\" or \"n\":"));
@@ -103,16 +94,11 @@ bool changeRangeSettingsDetect() {
   moveGentlyToAPV(16333, &right);
   center = (left + right) / 2;
 
-  printRangeLeftAPVSetting();
-  Serial.print(F("Detected left limit, as APV: "));
+  Serial.print(F("Detected left limit: APV="));
   Serial.println(left);
-
-  printRangeRightAPVSetting();
-  Serial.print(F("Detected right limit, as APV: "));
+  Serial.print(F("Detected right limit: APV="));
   Serial.println(right);
-
-  printRangeCenterAPVSetting();
-  Serial.print(F("Center of detected limits, as APV: "));
+  Serial.print(F("Center of detected limits: APV="));
   Serial.println(center);
 
   Serial.println(F(
@@ -166,10 +152,6 @@ void printRangeSettingsInteractiveHelp() {
 }
 
 bool changeRangeSettingsInteractive() {
-  printRangeLeftAPVSetting();
-  printRangeRightAPVSetting();
-  printRangeCenterAPVSetting();
-
   int16_t left = settings.rangeLeftAPV;
   int16_t right = settings.rangeCenterAPV;
   int16_t center = settings.rangeRightAPV;
@@ -189,22 +171,22 @@ bool changeRangeSettingsInteractive() {
       useGentleMovementSettings();
       Serial.println(F("Moving..."));
       moveGentlyToAPV(targetAPV, &actualAPV);
-      Serial.print(F("The APV the servo actually reached was: "));
+      Serial.print(F("The angle the servo actually reached was: APV="));
       Serial.println(actualAPV);
 
     } else if (parseWord(F("left"))) {
       left = actualAPV;
-      Serial.print(F("New range left endpoint will be "));
+      Serial.print(F("New range left endpoint will be: APV="));
       Serial.println(left);
 
     } else if (parseWord(F("right"))) {
       right = actualAPV;
-      Serial.print(F("New range right endpoint will be "));
+      Serial.print(F("New range right endpoint will be: APV="));
       Serial.println(right);
 
     } else if (parseWord(F("center"))) {
       center = actualAPV;
-      Serial.print(F("New range center point will be "));
+      Serial.print(F("New range center point will be: APV="));
       Serial.println(center);
 
     } else if (parseWord(F("save"))) {
@@ -259,25 +241,22 @@ bool changeRangeSettingsAPVHelper(int16_t *newAPVOut) {
 }
 
 bool changeRangeSettingsAPV() {
-  printRangeLeftAPVSetting();
   Serial.println(F(
-    "Enter new left endpoint, as APV (or nothing to keep same):"));
+    "Enter new left endpoint APV from 0 to 16383 (or nothing to keep same):"));
   int16_t left = settings.rangeLeftAPV;
   if (!changeRangeSettingsAPVHelper(&left)) {
     return false;
   }
 
-  printRangeRightAPVSetting();
   Serial.println(F(
-    "Enter new right endpoint, as APV (or nothing to keep same):"));
+    "Enter new right endpoint APV from 0 to 16383 (or nothing to keep same):"));
   int16_t right = settings.rangeRightAPV;
   if (!changeRangeSettingsAPVHelper(&right)) {
     return false;
   }
 
-  printRangeCenterAPVSetting();
   Serial.println(F(
-    "Enter new center point, as APV (or nothing to keep same):"));
+    "Enter new center point APV from 0 to 16383 (or nothing to keep same):"));
   int16_t center = settings.rangeCenterAPV;
   if (!changeRangeSettingsAPVHelper(&center)) {
     return false;
@@ -287,6 +266,10 @@ bool changeRangeSettingsAPV() {
 }
 
 void changeRangeSettings() {
+  printRangeLeftAPVSetting();
+  printRangeRightAPVSetting();
+  printRangeCenterAPVSetting();
+
   if (!checkSupportedModel()) {
     goto cancel;
   }
