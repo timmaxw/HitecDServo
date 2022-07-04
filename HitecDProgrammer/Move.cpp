@@ -1,6 +1,66 @@
 #include "Move.h"
 
+#include "CommandLine.h"
 #include "Common.h"
+
+void askAndMoveToMicros() {
+  Serial.println(F(
+    "Enter position to move to, in microseconds (or nothing to cancel):"));
+  int16_t targetMicros;
+  if (!scanNumber(&targetMicros)) {
+    goto cancel;
+  }
+  if (targetMicros < 850) {
+    Serial.println(F("Error: Cannot be less than 850us"));
+    goto cancel;
+  }
+  if (targetMicros > 2150) {
+    Serial.println(F("Error: Cannot be greater than 2150us"));
+    goto cancel;
+  }
+
+  moveToQuarterMicros(targetMicros * 4);
+  return;
+
+cancel:
+  Serial.println(F("Servo will not be moved to new position."));
+}
+
+void moveToQuarterMicros(int16_t quarterMicros) {
+  int16_t startAPV = servo.readCurrentAPV();
+  if (startAPV < 0) {
+    printErr(startAPV, true);
+  }
+
+  servo.writeTargetQuarterMicros(quarterMicros);
+
+  long startMs = millis();
+  int16_t prevAPV = startAPV;
+  for (long nextMs = 100; nextMs < 10000; nextMs += 100) {
+    long currentMs = millis() - startMs;
+    delay(nextMs - currentMs);
+
+    int16_t nextAPV = servo.readCurrentAPV();
+    if (nextAPV < 0) {
+      printErr(nextAPV, true);
+    }
+
+    if (abs(prevAPV - nextAPV) < 10) {
+      Serial.print(F("Servo moved to APV="));
+      Serial.print(nextAPV);
+      Serial.print(F(" in about "));
+      Serial.print(nextMs / 1000);
+      Serial.print('.');
+      Serial.print((nextMs % 1000) / 100);
+      Serial.println(F("s."));
+      return;
+    }
+
+    prevAPV = nextAPV;
+  }
+
+  Serial.println(F("Warning: Servo did not finish moving within 10s."));
+}
 
 /* When moving gently to arbitrary APVs, temporarily overwrite the servo
 settings by moving the endpoints beyond the physical limits that the servo can

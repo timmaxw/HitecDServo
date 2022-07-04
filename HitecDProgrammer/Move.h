@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+void askAndMoveToMicros();
+void moveToQuarterMicros(int16_t quarterMicros);
+
 extern bool usingGentleMovementSettings;
 void useGentleMovementSettings();
 void undoGentleMovementSettings();

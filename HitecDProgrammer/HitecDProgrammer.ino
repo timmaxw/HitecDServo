@@ -2,6 +2,7 @@
 
 #include "CommandLine.h"
 #include "Common.h"
+#include "Move.h"
 #include "RangeSettings.h"
 #include "Settings.h"
 #include "UnsupportedModel.h"
@@ -130,6 +131,8 @@ void printHelp() {
   Serial.println(F(
     "  show        - Show current servo settings"));
   Serial.println(F(
+    "  move        - Move servo to specific position"));
+  Serial.println(F(
     "  id          - Change ID setting"));
   Serial.println(F(
     "  direction   - Change direction setting"));
@@ -165,6 +168,8 @@ void loop() {
   if (parseWord(F("show"))) {
     Serial.println(F("Current servo settings:"));
     printSettings();
+  } else if (parseWord(F("move"))) {
+    askAndMoveToMicros();
   } else if (parseWord(F("id"))) {
     changeIdSetting();
   } else if (parseWord(F("direction"))) {

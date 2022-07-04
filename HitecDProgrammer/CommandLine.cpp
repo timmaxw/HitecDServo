@@ -73,47 +73,18 @@ bool parseNumber(int16_t *valOut, int flags) {
     return false;
   }
 
-  int i = 0;
-
   *valOut = 0;
-  while (i < rawInputLen && rawInput[i] >= '0' && rawInput[i] <= '9') {
-    *valOut = *valOut * 10 + (rawInput[i] - '0');
-    ++i;
-  }
-
-  if (flags & QUARTERS) {
-    /* In "quarters" mode, we allow numbers to end in .0, .25, .5, .75; the
-    value we return is multiplied by 4. (We don't support floating point in
-    general.) */
-    *valOut *= 4;
-    if (i < rawInputLen && rawInput[i] == '.') {
-      ++i;
-      if (i < rawInputLen && rawInput[i] == '0') {
-        i += 1;
-      } else if (i + 1 < rawInputLen &&
-          rawInput[i] == '2' && rawInput[i+1] == '5') {
-        *valOut += 1;
-        i += 2;
-      } else if (i < rawInputLen && rawInput[i] == '5') {
-        *valOut += 2;
-        i += 1;
-      } else if (i < rawInputLen &&
-          rawInput[i] == '7' && rawInput[i+1] == '5') {
-        *valOut += 3;
-        i += 2;
-      } else {
-        Serial.println(F("Error: Invalid number."));
-        return false;
-      }
-      while (i < rawInputLen && rawInput[i] == '0') {
-        ++i;
-      }
+  for (int i = 0; i < rawInputLen; ++i) {
+    char c = rawInput[i];
+    if (c == '.') {
+      Serial.println(F("Error: Decimals are not allowed."));
+      return false;
     }
-  }
-
-  if (i != rawInputLen) {
-    Serial.println(F("Error: Invalid number."));
-    return false;
+    if (c < '0' || c > '9') {
+      Serial.println(F("Error: Invalid number."));
+      return false;
+    }
+    *valOut = (*valOut * 10) + (c - '0');
   }
 
   return true;
