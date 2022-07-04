@@ -238,7 +238,7 @@ private:
   volatile uint8_t *pinInputRegister, *pinOutputRegister;
 
   int modelNumber;
-  int16_t rangeLeftAPV, rangeCenterAPV, rangeRightAPV;
+  int16_t rangeLeftAPV, rangeRightAPV, rangeCenterAPV;
 };
 
 #endif /* HitecDServo_h */

@@ -29,8 +29,8 @@ HitecDSettings::HitecDSettings() :
   deadband(defaultDeadband),
   softStart(defaultSoftStart),
   rangeLeftAPV(-1),
-  rangeCenterAPV(-1),
   rangeRightAPV(-1),
+  rangeCenterAPV(-1),
   failSafe(defaultFailSafe),
   failSafeLimp(defaultFailSafeLimp),
   powerLimit(defaultPowerLimit),
@@ -114,17 +114,17 @@ int HitecDServo::attach(int _pin) {
   }
   rangeLeftAPV = temp;
 
-  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
-    detach();
-    return res;
-  }
-  rangeCenterAPV = temp;
-
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     detach();
     return res;
   }
   rangeRightAPV = temp;
+
+  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+    detach();
+    return res;
+  }
+  rangeCenterAPV = temp;
 
   return HITECD_OK;
 }
@@ -278,19 +278,21 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
     return HITECD_ERR_CONFUSED;
   }
 
-  /* Read rangeLeftAPV, rangeCenterAPV, rangeRightAPV */
+  /* Read rangeLeftAPV, rangeRightAPV, rangeCenterAPV */
   if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
     return res;
   }
   settingsOut->rangeLeftAPV = rangeLeftAPV = temp;
-  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
-    return res;
-  }
-  settingsOut->rangeCenterAPV = rangeCenterAPV = temp;
+
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
     return res;
   }
   settingsOut->rangeRightAPV = rangeRightAPV = temp;
+
+  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+    return res;
+  }
+  settingsOut->rangeCenterAPV = rangeCenterAPV = temp;
 
   /* Read failSafe and failSafeLimp. (A single register controls both.) */
   if ((res = readRawRegister(0x4C, &temp)) != HITECD_OK) {
@@ -443,8 +445,8 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
     }
   }
 
-  /* Write rangeLeftAPV, rangeCenterAPV, and rangeRightAPV. Also, update
-  the instance variables that we initialized in attach(). (If we're using the
+  /* Write rangeLeftAPV, rangeRightAPV, and rangeCenterAPV. Also, update the
+  instance variables that we initialized in attach(). (If we're using the
   default values, then read them back into instance variables, so we have the
   correct default values.) */
   if (settings.rangeLeftAPV != -1 &&
@@ -458,17 +460,7 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
     }
     rangeLeftAPV = temp;
   }
-  if (settings.rangeCenterAPV != -1 &&
-      settings.rangeCenterAPV !=
-        HitecDSettings::defaultRangeCenterAPV(modelNumber)) {
-    writeRawRegister(0xC2, settings.rangeCenterAPV);
-    rangeCenterAPV = settings.rangeCenterAPV;
-  } else {
-    if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
-      return res;
-    }
-    rangeCenterAPV = temp;
-  }
+
   if (settings.rangeRightAPV != -1 &&
       settings.rangeRightAPV !=
         HitecDSettings::defaultRangeRightAPV(modelNumber)) {
@@ -479,6 +471,18 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
       return res;
     }
     rangeRightAPV = temp;
+  }
+
+  if (settings.rangeCenterAPV != -1 &&
+      settings.rangeCenterAPV !=
+        HitecDSettings::defaultRangeCenterAPV(modelNumber)) {
+    writeRawRegister(0xC2, settings.rangeCenterAPV);
+    rangeCenterAPV = settings.rangeCenterAPV;
+  } else {
+    if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+      return res;
+    }
+    rangeCenterAPV = temp;
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */

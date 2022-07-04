@@ -30,8 +30,4 @@ void fatalErr();
 void printValueWithDefault(int16_t value, int16_t defaultValue);
 void writeSettings();
 
-void useRangeMeasurementSettings();
-void undoRangeMeasurementSettings();
-void temporarilyMoveToAPV(int16_t targetAPV, int16_t *actualAPV);
-
 #endif /* Common_h */

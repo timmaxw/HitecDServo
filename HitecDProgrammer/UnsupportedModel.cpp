@@ -2,6 +2,7 @@
 
 #include "CommandLine.h"
 #include "Common.h"
+#include "Move.h"
 
 bool allowUnsupportedModel = false;
 
@@ -47,7 +48,7 @@ void printDiagnosticsForUnsupportedModel() {
     0x50, 0x52, 0x56, 0x72, 0x98, 0x9A
   };
 
-  for (int i = 0; i < sizeof(registersToDebug); ++i) {
+  for (int i = 0; i < (int)sizeof(registersToDebug); ++i) {
     uint8_t reg = registersToDebug[i];
     uint16_t temp;
     int res;
@@ -73,13 +74,13 @@ void printDiagnosticsForUnsupportedModel() {
     "Make sure nothing is attached to the servo horn. Enter \"y\" or \"n\":"));
   if (scanYesNo()) {
     int16_t left, right, center;
-    useRangeMeasurementSettings();
+    useGentleMovementSettings();
     Serial.println(F("Moving left as far as possible..."));
-    temporarilyMoveToAPV(50, &left);
+    moveGentlyToAPV(50, &left);
     Serial.println(F("Moving right as far as possible..."));
-    temporarilyMoveToAPV(16333, &right);
+    moveGentlyToAPV(16333, &right);
     center = (left + right) / 2;
-    undoRangeMeasurementSettings();
+    undoGentleMovementSettings();
 
     /* Note widestRangeLeftAPVClockwise/etc. always follow a clockwise
     convention. So if the servo is in counterclockwise mode, we have to invert

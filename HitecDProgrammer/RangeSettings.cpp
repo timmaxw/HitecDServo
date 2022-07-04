@@ -2,6 +2,7 @@
 
 #include "CommandLine.h"
 #include "Common.h"
+#include "Move.h"
 #include "UnsupportedModel.h"
 
 void printRangeLeftAPVSetting() {
@@ -50,7 +51,7 @@ bool changeRangeSettingsDefault() {
 }
 
 bool changeRangeSettingsWidest() {
-  if (widestRangeLeftAPV == -1) {
+  if (widestRangeLeftAPV() == -1) {
     Serial.println(F(
       "Error: The HitecDServo library does not know the widest range for\r\n"
       "your servo model. Do you want to detect how far the servo can move\r\n"
@@ -94,12 +95,12 @@ bool changeRangeSettingsDetect() {
     return false;
   }
 
-  useRangeMeasurementSettings();
+  useGentleMovementSettings();
   int16_t left, right, center;
   Serial.println(F("Moving left as far as possible..."));
-  temporarilyMoveToAPV(50, &left);
+  moveGentlyToAPV(50, &left);
   Serial.println(F("Moving right as far as possible..."));
-  temporarilyMoveToAPV(16333, &right);
+  moveGentlyToAPV(16333, &right);
   center = (left + right) / 2;
 
   printRangeLeftAPVSetting();
@@ -185,9 +186,9 @@ bool changeRangeSettingsInteractive() {
       if (!parseNumber(&targetAPV)) {
         continue;
       }
-      useRangeMeasurementSettings();
+      useGentleMovementSettings();
       Serial.println(F("Moving..."));
-      temporarilyMoveToAPV(targetAPV, &actualAPV);
+      moveGentlyToAPV(targetAPV, &actualAPV);
       Serial.print(F("The APV the servo actually reached was: "));
       Serial.println(actualAPV);
 
@@ -334,6 +335,6 @@ void changeRangeSettings() {
 
 cancel:
   Serial.println(F("Current range settings will not be changed."));
-  undoRangeMeasurementSettings();
+  undoGentleMovementSettings();
 }
 

@@ -3,7 +3,7 @@
 char rawInput[32];
 int rawInputLen;
 
-void scanRawInput(int flags = 0) {
+void scanRawInput(int flags) {
   /* Discard any leftover data in the serial buffer; it would have been
   sent before the prompt was printed, so it probably wasn't meant as input to
   the prompt. */
@@ -23,7 +23,7 @@ void scanRawInput(int flags = 0) {
     }
     char next = Serial.read();
     if (next == '\r' || next == '\n') {
-      if (rawInputLen < sizeof(rawInput)) {
+      if (rawInputLen < (int16_t)sizeof(rawInput)) {
         if (next == '\r') {
           /* Check for and discard a LF character (second half of CRLF) */
           delay(10);
@@ -60,7 +60,7 @@ void scanRawInput(int flags = 0) {
   }
 }
 
-bool parseNumber(int16_t *valOut, int flags = 0) {
+bool parseNumber(int16_t *valOut, int flags) {
   if (rawInputLen == 0) {
     if (flags & PRINT_IF_EMPTY) {
       Serial.println(F("Error: Input was empty."));
@@ -119,7 +119,7 @@ bool parseNumber(int16_t *valOut, int flags = 0) {
   return true;
 }
 
-bool scanNumber(int16_t *valOut, int flags = 0) {
+bool scanNumber(int16_t *valOut, int flags) {
   scanRawInput();
   return parseNumber(valOut, flags);
 }

@@ -70,12 +70,16 @@ void changeDirectionSetting() {
 
   settings.counterclockwise = newCounterclockwise;
 
-  int16_t prevRangeLeftAPV = settings.rangeLeftAPV;
-  int16_t prevRangeRightAPV = settings.rangeRightAPV;
-  int16_t prevRangeCenterAPV = settings.rangeCenterAPV;
-  settings.rangeLeftAPV = 16383 - prevRangeRightAPV;
-  settings.rangeRightAPV = 16383 - prevRangeLeftAPV;
-  settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
+  /* Nested block prevents compiler warnings about "goto cancel" crossing
+  initialization of variables */
+  {
+    int16_t prevRangeLeftAPV = settings.rangeLeftAPV;
+    int16_t prevRangeRightAPV = settings.rangeRightAPV;
+    int16_t prevRangeCenterAPV = settings.rangeCenterAPV;
+    settings.rangeLeftAPV = 16383 - prevRangeRightAPV;
+    settings.rangeRightAPV = 16383 - prevRangeLeftAPV;
+    settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
+  }
 
   writeSettings();
   return;
