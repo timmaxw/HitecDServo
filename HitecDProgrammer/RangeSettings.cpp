@@ -191,27 +191,27 @@ bool changeRangeSettingsInteractive() {
       Serial.print(F("The APV the servo actually reached was: "));
       Serial.println(actualAPV);
 
-    } else if (parseWord("left")) {
+    } else if (parseWord(F("left"))) {
       left = actualAPV;
       Serial.print(F("New range left endpoint will be "));
       Serial.println(left);
 
-    } else if (parseWord("right")) {
+    } else if (parseWord(F("right"))) {
       right = actualAPV;
       Serial.print(F("New range right endpoint will be "));
       Serial.println(right);
 
-    } else if (parseWord("center")) {
+    } else if (parseWord(F("center"))) {
       center = actualAPV;
       Serial.print(F("New range center point will be "));
       Serial.println(center);
 
-    } else if (parseWord("save")) {
+    } else if (parseWord(F("save"))) {
       if (saveRangeSettings(left, right, center)) {
         return true;
       }
 
-    } else if (parseWord("cancel")) {
+    } else if (parseWord(F("cancel"))) {
       return false;
 
     } else {
@@ -304,23 +304,23 @@ void changeRangeSettings() {
     "  apv         - Change range to specific APV numbers you type in"));
 
   scanRawInput();
-  if (parseWord("default")) {
+  if (parseWord(F("default"))) {
     if (!changeRangeSettingsDefault()) {
       goto cancel;
     }
-  } else if (parseWord("widest")) {
+  } else if (parseWord(F("widest"))) {
     if (!changeRangeSettingsWidest()) {
       goto cancel;
     }
-  } else if (parseWord("detect")) {
+  } else if (parseWord(F("detect"))) {
     if (!changeRangeSettingsDetect()) {
       goto cancel;
     }
-  } else if (parseWord("interactive")) {
+  } else if (parseWord(F("interactive"))) {
     if (!changeRangeSettingsInteractive()) {
       goto cancel;
     }
-  } else if (parseWord("apv")) {
+  } else if (parseWord(F("apv"))) {
     if (!changeRangeSettingsAPV()) {
       goto cancel;
     }

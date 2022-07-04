@@ -27,7 +27,7 @@ bool parseNumber(int16_t *valOut, int flags = 0);
 
 /* parseWord() returns true if rawInput matches the given word, false if not.
 Matching is case-insensitive. */
-bool parseWord(const char *word);
+bool parseWord(const __FlashStringHelper *word);
 
 /* scanNumber() is a convenience function that just combines scanRawInput() with
 parseNumber(). */

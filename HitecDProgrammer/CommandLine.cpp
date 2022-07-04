@@ -124,24 +124,27 @@ bool scanNumber(int16_t *valOut, int flags = 0) {
   return parseNumber(valOut, flags);
 }
 
-bool parseWord(const char *word) {
-  int i;
-  for (i = 0; word[i]; ++i) {
+bool parseWord(const __FlashStringHelper *word) {
+  PGM_P pgm_word = reinterpret_cast<PGM_P>(word);
+  for (int i = 0; ; ++i) {
+    char c = pgm_read_byte(pgm_word + i);
+    if (c == '\0') {
+      return (rawInputLen == i);
+    }
     if (rawInputLen <= i) {
       return false;
     }
-    if (tolower(word[i]) != tolower(rawInput[i])) {
+    if (tolower(c) != tolower(rawInput[i])) {
       return false;
     }
   }
-  return (rawInputLen == i);
 }
 
 bool scanYesNo() {
   scanRawInput();
-  if (parseWord("y") || parseWord("yes")) {
+  if (parseWord(F("y")) || parseWord(F("yes"))) {
     return true;
-  } else if (rawInputLen == 0 || parseWord("n") || parseWord("no")) {
+  } else if (rawInputLen == 0 || parseWord(F("n")) || parseWord(F("no"))) {
     return false;
   } else {
     Serial.println(F("Error: You did not enter \"y\" or \"n\"."));

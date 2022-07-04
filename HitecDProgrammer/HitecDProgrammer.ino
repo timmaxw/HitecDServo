@@ -162,34 +162,34 @@ void loop() {
     "===================================================================="));
   Serial.println(F("Enter a command:"));
   scanRawInput();
-  if (parseWord("show")) {
+  if (parseWord(F("show"))) {
     Serial.println(F("Current servo settings:"));
     printSettings();
-  } else if (parseWord("id")) {
+  } else if (parseWord(F("id"))) {
     changeIdSetting();
-  } else if (parseWord("direction")) {
+  } else if (parseWord(F("direction"))) {
     changeDirectionSetting();
-  } else if (parseWord("speed")) {
+  } else if (parseWord(F("speed"))) {
     changeSpeedSetting();
-  } else if (parseWord("deadband")) {
+  } else if (parseWord(F("deadband"))) {
     changeDeadbandSetting();
-  } else if (parseWord("softstart")) {
+  } else if (parseWord(F("softstart"))) {
     changeSoftStartSetting();
-  } else if (parseWord("range")) {
+  } else if (parseWord(F("range"))) {
     changeRangeSettings();
-  } else if (parseWord("failsafe")) {
+  } else if (parseWord(F("failsafe"))) {
     changeFailSafeSetting();
-  } else if (parseWord("powerlimit")) {
+  } else if (parseWord(F("powerlimit"))) {
     changePowerLimitSetting();
-  } else if (parseWord("overload")) {
+  } else if (parseWord(F("overload"))) {
     changeOverloadProtectionSetting();
-  } else if (parseWord("smartsense")) {
+  } else if (parseWord(F("smartsense"))) {
     changeSmartSenseSetting();
-  } else if (parseWord("sensitivity")) {
+  } else if (parseWord(F("sensitivity"))) {
     changeSensitivityRatioSetting();
-  } else if (parseWord("reset")) {
+  } else if (parseWord(F("reset"))) {
     resetSettingsToFactoryDefaults();
-  } else if (parseWord("help")) {
+  } else if (parseWord(F("help"))) {
     printHelp();
   } else {
     Serial.println(F("Error: What you entered is not a valid command."));

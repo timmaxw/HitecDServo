@@ -51,9 +51,9 @@ void changeDirectionSetting() {
     "Enter \"Clockwise\" or \"Counterclockwise\" (or nothing to cancel):"));
   scanRawInput();
   bool newCounterclockwise;
-  if (parseWord("Clockwise")) {
+  if (parseWord(F("Clockwise"))) {
     newCounterclockwise = false;
-  } else if (parseWord("Counterclockwise")) {
+  } else if (parseWord(F("Counterclockwise"))) {
     newCounterclockwise = true;
   } else if (rawInputLen == 0) {
     goto cancel;
@@ -198,10 +198,10 @@ void changeFailSafeSetting() {
   scanRawInput();
   int16_t newFailSafe;
   bool newFailSafeLimp;
-  if (parseWord("Off")) {
+  if (parseWord(F("Off"))) {
     newFailSafe = 0;
     newFailSafeLimp = false;
-  } else if (parseWord("Limp")) {
+  } else if (parseWord(F("Limp"))) {
     newFailSafe = 0;
     newFailSafeLimp = true;
   } else if (parseNumber(&newFailSafe)) {
@@ -283,7 +283,7 @@ void changeOverloadProtectionSetting() {
     "nothing to cancel):"));
   scanRawInput();
   int16_t newOverloadProtection;
-  if (parseWord("Off")) {
+  if (parseWord(F("Off"))) {
     newOverloadProtection = 100;
   } else if (parseNumber(&newOverloadProtection)) {
     if (newOverloadProtection < 10 ||
@@ -325,9 +325,9 @@ void changeSmartSenseSetting() {
   Serial.println(F("Enter \"On\" or \"Off\" (or nothing to cancel):"));
   scanRawInput();
   bool newSmartSense;
-  if (parseWord("On")) {
+  if (parseWord(F("On"))) {
     newSmartSense = true;
-  } else if (parseWord("Off")) {
+  } else if (parseWord(F("Off"))) {
     newSmartSense = false;
   } else if (rawInputLen == 0) {
     goto cancel;
