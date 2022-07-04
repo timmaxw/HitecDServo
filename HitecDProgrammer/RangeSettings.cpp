@@ -80,8 +80,9 @@ bool changeRangeSettingsWidest() {
 
 bool changeRangeSettingsDetect() {
   Serial.println(F(
-    "Servo will move as far as possible in each direction. When you are\r\n"
-    "ready, enter \"y\" to continue (or \"n\" to cancel):"));
+    "To detect the limits, the servo will move as far as possible in each \r\n"
+    "direction. When ready, enter \"y\" to begin (or \"n\" to cancel):"
+  ));
   if (!scanYesNo()) {
     return false;
   }

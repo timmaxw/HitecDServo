@@ -10,24 +10,24 @@ codes are as follows: */
 #define HITECD_OK 1
 
 /* attach() was not called, or the call to attach() failed. */
-#define HITECD_ERR_NOT_ATTACHED -1
+#define HITECD_ERR_NOT_ATTACHED (-101)
 
 /* No servo detected. */
-#define HITECD_ERR_NO_SERVO -2
+#define HITECD_ERR_NO_SERVO (-102)
 
 /* Either the servo is still booting (which takes 1000ms) or the pullup resistor
 is missing. (Use a 2k resistor with a 5V microcontroller, or a 1k resistor with
 a 3.3V microcontroller.) */
-#define HITECD_ERR_BOOTING_OR_NO_PULLUP -3
+#define HITECD_ERR_BOOTING_OR_NO_PULLUP (-103)
 
 /* Corrupt response from servo. */
-#define HITECD_ERR_CORRUPT -4
+#define HITECD_ERR_CORRUPT (-104)
 
 /* Unsupported model of servo. (Only D485HW is fully supported.) */
-#define HITECD_ERR_UNSUPPORTED_MODEL -5
+#define HITECD_ERR_UNSUPPORTED_MODEL (-105)
 
 /* Confusing response from servo. */
-#define HITECD_ERR_CONFUSED -6
+#define HITECD_ERR_CONFUSED (-106)
 
 /* hitecdErrToString() returns a string description of the given error code. You
 can print this with Serial for debugging purposes. For example:
