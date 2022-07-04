@@ -11,7 +11,7 @@ is set) because the Arduino serial console doesn't echo user input, and it's
 helpful for the user to be able to see what they typed. */
 #define NO_ECHO (1 << 0)
 void scanRawInput(int flags = 0);
-extern char rawInput[128];
+extern char rawInput[32];
 extern int rawInputLen;
 
 /* parseNumber() tries to interpret rawInput as a positive number:

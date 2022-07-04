@@ -1,6 +1,6 @@
 #include "CommandLine.h"
 
-char rawInput[128];
+char rawInput[32];
 int rawInputLen;
 
 void scanRawInput(int flags = 0) {
