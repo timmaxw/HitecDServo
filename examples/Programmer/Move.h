@@ -1,11 +1,7 @@
-#ifndef Common_h
-#define Common_h
+#ifndef Move_h
+#define Move_h
 
-#include <HitecDServo.h>
-
-extern HitecDServo servo;
-extern int modelNumber;
-extern HitecDSettings settings;
+#include <Arduino.h>
 
 /* For supported models, the library knows these values. But for unsupported
 models, we can only discover them experimentally. These variables will be set
@@ -25,9 +21,12 @@ int16_t widestRangeLeftAPV();
 int16_t widestRangeRightAPV();
 int16_t widestRangeCenterAPV();
 
-void printErr(int res, bool fatal);
-void fatalErr();
-void printValueWithDefault(int16_t value, int16_t defaultValue);
-void saveSettings();
+void askAndMoveToMicros();
+void moveToQuarterMicros(int16_t quarterMicros);
 
-#endif /* Common_h */
+extern bool usingGentleMovementSettings;
+void useGentleMovementSettings();
+void undoGentleMovementSettings();
+void moveGentlyToAPV(int16_t targetAPV, int16_t *actualAPV);
+
+#endif /* Move_h */

@@ -1,11 +1,59 @@
 #include <HitecDServo.h>
 
 #include "CommandLine.h"
-#include "Common.h"
 #include "Move.h"
 #include "RangeSettings.h"
 #include "Settings.h"
 #include "UnsupportedModel.h"
+
+HitecDServo servo;
+int modelNumber;
+HitecDSettings settings;
+
+void fatalErr() {
+  Serial.println(F("Please fix the problem and then reset your Arduino."));
+  while (true) { }
+}
+
+void printErr(int res, bool fatal) {
+  if (res == HITECD_OK) {
+    return;
+  }
+
+  Serial.print(F("Error: "));
+  Serial.println(hitecdErrToString(res));
+
+  if (fatal) {
+    fatalErr();
+  }
+}
+
+void saveSettings() {
+  int res;
+  Serial.println(F("Saving new servo settings..."));
+
+  /* Writing the settings starts by resetting the servo to factory settings,
+  which will overwrite any gentle-movement settings. */
+  usingGentleMovementSettings = false;
+
+  res = servo.writeSettingsUnsupportedModelThisMightDamageTheServo(
+    settings,
+    allowUnsupportedModel
+  );
+  if (res != HITECD_OK) {
+    printErr(res, true);
+  }
+
+  /* Wait for servo to reboot */
+  delay(1000);
+
+  /* Read back the settings to make sure we have the latest values. */
+  if ((res = servo.readSettings(&settings)) != HITECD_OK) {
+    printErr(res, true);
+  }
+
+  Serial.println(F("Done."));
+}
 
 void printSettings() {
   printIdSetting();

@@ -1,8 +1,9 @@
 #include "RangeSettings.h"
 
 #include "CommandLine.h"
-#include "Common.h"
 #include "Move.h"
+#include "Programmer.h"
+#include "Settings.h"
 #include "UnsupportedModel.h"
 
 void printRangeLeftAPVSetting() {

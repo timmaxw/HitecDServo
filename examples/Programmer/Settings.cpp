@@ -1,8 +1,21 @@
 #include "Settings.h"
 
 #include "CommandLine.h"
-#include "Common.h"
+#include "Programmer.h"
 #include "UnsupportedModel.h"
+
+void printValueWithDefault(int16_t value, int16_t defaultValue) {
+  Serial.print(value, DEC);
+  if (value == defaultValue) {
+    Serial.println(F(" (default)"));
+  } else if (defaultValue != -1) {
+    Serial.print(F(" (default is "));
+    Serial.print(defaultValue, DEC);
+    Serial.println(')');
+  } else {
+    Serial.println(F(" (default unknown)"));
+  }
+}
 
 void printIdSetting() {
   Serial.print(F("Current ID: "));

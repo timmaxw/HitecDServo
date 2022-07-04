@@ -1,7 +1,7 @@
 #include "UnsupportedModel.h"
 
 #include "CommandLine.h"
-#include "Common.h"
+#include "Programmer.h"
 #include "Move.h"
 
 bool allowUnsupportedModel = false;

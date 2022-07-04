@@ -1,6 +1,10 @@
 #ifndef Settings_h
 #define Settings_h
 
+#include <Arduino.h>
+
+void printValueWithDefault(int16_t value, int16_t defaultValue);
+
 void printIdSetting();
 void changeIdSetting();
 
