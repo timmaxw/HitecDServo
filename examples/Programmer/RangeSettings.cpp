@@ -1,10 +1,10 @@
 #include "RangeSettings.h"
 
 #include "CommandLine.h"
+#include "ModelSpecs.h"
 #include "Move.h"
 #include "Programmer.h"
 #include "Settings.h"
-#include "UnsupportedModel.h"
 
 void printRangeLeftAPVSetting() {
   Serial.print(F("Current range left endpoint: APV="));

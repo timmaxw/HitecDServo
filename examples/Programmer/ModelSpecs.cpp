@@ -1,25 +1,10 @@
-#include "UnsupportedModel.h"
+#include "ModelSpecs.h"
 
 #include "CommandLine.h"
 #include "Programmer.h"
 #include "Move.h"
 
-bool allowUnsupportedModel = false;
-
-bool checkSupportedModel() {
-  if (servo.isModelSupported() || allowUnsupportedModel) {
-    return true;
-  }
-
-  Serial.println(F(
-    "Warning: Your servo model is not fully supported. Changing the\r\n"
-    "settings may lead to unexpected behavior or even damage the servo.\r\n"
-    "Proceed anyway? Enter \"y\" or \"n\":"));
-  allowUnsupportedModel = scanYesNo();
-  return allowUnsupportedModel;
-}
-
-void printDiagnosticsForUnsupportedModel() {
+void setupUnsupportedModelSpecs() {
   Serial.println(F(
     "====================================================================\r\n"
     "Warning: Your servo model is not fully supported. Currently, only\r\n"
@@ -114,3 +99,76 @@ void printDiagnosticsForUnsupportedModel() {
     "===================================================================="
   ));
 }
+
+void setupModelSpecs() {
+  if (servo.isModelSupported()) {
+    defaultRangeLeftAPV =
+      HitecDSettings::defaultRangeLeftAPV(modelNumber);
+    defaultRangeRightAPV =
+      HitecDSettings::defaultRangeRightAPV(modelNumber);
+    defaultRangeCenterAPV =
+      HitecDSettings::defaultRangeCenterAPV(modelNumber);
+    widestRangeLeftAPVClockwise =
+      HitecDSettings::widestRangeLeftAPV(modelNumber);
+    widestRangeRightAPVClockwise =
+      HitecDSettings::widestRangeRightAPV(modelNumber);
+    widestRangeCenterAPVClockwise =
+      HitecDSettings::widestRangeCenterAPV(modelNumber);
+  } else {
+    setupUnsupportedModelSpecs();
+  }
+}
+
+int16_t defaultRangeLeftAPV = -1;
+int16_t defaultRangeRightAPV = -1;
+int16_t defaultRangeCenterAPV = -1;
+
+int16_t widestRangeLeftAPVClockwise = -1;
+int16_t widestRangeRightAPVClockwise = -1;
+int16_t widestRangeCenterAPVClockwise = -1;
+
+int16_t widestRangeLeftAPV() {
+  if (widestRangeLeftAPVClockwise == -1) {
+    return -1;
+  } else if (!settings.counterclockwise) {
+    return widestRangeLeftAPVClockwise;
+  } else {
+    return 16383 - widestRangeRightAPVClockwise;
+  }
+}
+
+int16_t widestRangeRightAPV() {
+  if (widestRangeRightAPVClockwise == -1) {
+    return -1;
+  } else if (!settings.counterclockwise) {
+    return widestRangeRightAPVClockwise;
+  } else {
+    return 16383 - widestRangeLeftAPVClockwise;
+  }
+}
+
+int16_t widestRangeCenterAPV() {
+  if (widestRangeCenterAPVClockwise == -1) {
+    return -1;
+  } else if (!settings.counterclockwise) {
+    return widestRangeCenterAPVClockwise;
+  } else {
+    return 16383 - widestRangeCenterAPVClockwise;
+  }
+}
+
+bool allowUnsupportedModel = false;
+
+bool checkSupportedModel() {
+  if (servo.isModelSupported() || allowUnsupportedModel) {
+    return true;
+  }
+
+  Serial.println(F(
+    "Warning: Your servo model is not fully supported. Changing the\r\n"
+    "settings may lead to unexpected behavior or even damage the servo.\r\n"
+    "Proceed anyway? Enter \"y\" or \"n\":"));
+  allowUnsupportedModel = scanYesNo();
+  return allowUnsupportedModel;
+}
+

@@ -1,10 +1,10 @@
 #include <HitecDServo.h>
 
 #include "CommandLine.h"
+#include "ModelSpecs.h"
 #include "Move.h"
 #include "RangeSettings.h"
 #include "Settings.h"
-#include "UnsupportedModel.h"
 
 HitecDServo servo;
 int modelNumber;
@@ -150,22 +150,7 @@ void setup() {
   Serial.print("Servo model: D");
   Serial.println(modelNumber, DEC);
 
-  if (servo.isModelSupported()) {
-    defaultRangeLeftAPV =
-      HitecDSettings::defaultRangeLeftAPV(modelNumber);
-    defaultRangeRightAPV =
-      HitecDSettings::defaultRangeRightAPV(modelNumber);
-    defaultRangeCenterAPV =
-      HitecDSettings::defaultRangeCenterAPV(modelNumber);
-    widestRangeLeftAPVClockwise =
-      HitecDSettings::widestRangeLeftAPV(modelNumber);
-    widestRangeRightAPVClockwise =
-      HitecDSettings::widestRangeRightAPV(modelNumber);
-    widestRangeCenterAPVClockwise =
-      HitecDSettings::widestRangeCenterAPV(modelNumber);
-  } else {
-    printDiagnosticsForUnsupportedModel();
-  }
+  setupModelSpecs();
 
   printSettings();
 

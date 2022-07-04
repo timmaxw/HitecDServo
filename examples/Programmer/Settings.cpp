@@ -1,8 +1,8 @@
 #include "Settings.h"
 
 #include "CommandLine.h"
+#include "ModelSpecs.h"
 #include "Programmer.h"
-#include "UnsupportedModel.h"
 
 void printValueWithDefault(int16_t value, int16_t defaultValue) {
   Serial.print(value, DEC);
