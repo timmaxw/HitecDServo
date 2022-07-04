@@ -5,6 +5,10 @@
 
 void printValueWithDefault(int16_t value, int16_t defaultValue);
 
+void printAllSettings();
+
+void saveSettings();
+
 void printIdSetting();
 void changeIdSetting();
 
@@ -34,5 +38,7 @@ void changeSmartSenseSetting();
 
 void printSensitivityRatioSetting();
 void changeSensitivityRatioSetting();
+
+void resetSettingsToFactoryDefaults();
 
 #endif /* Settings_h */

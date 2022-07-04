@@ -1,4 +1,11 @@
-#include <HitecDServo.h>
+/* This sketch is a full-featured servo programmer. Upload it to the Arduino,
+then use the Serial Monitor at 152000 baud to interactively read/write the
+settings of your Hitec D-series servo that's attached to the Arduino.
+
+Although this sketch is in the "examples" section, it's quite complex and not
+actually a good example to learn how to use the HitecDServo library. */
+
+#include "Programmer.h"
 
 #include "CommandLine.h"
 #include "ModelSpecs.h"
@@ -28,89 +35,14 @@ void printErr(int res, bool fatal) {
   }
 }
 
-void saveSettings() {
-  int res;
-  Serial.println(F("Saving new servo settings..."));
-
-  /* Writing the settings starts by resetting the servo to factory settings,
-  which will overwrite any gentle-movement settings. */
-  usingGentleMovementSettings = false;
-
-  res = servo.writeSettingsUnsupportedModelThisMightDamageTheServo(
-    settings,
-    allowUnsupportedModel
-  );
-  if (res != HITECD_OK) {
-    printErr(res, true);
-  }
-
-  /* Wait for servo to reboot */
-  delay(1000);
-
-  /* Read back the settings to make sure we have the latest values. */
-  if ((res = servo.readSettings(&settings)) != HITECD_OK) {
-    printErr(res, true);
-  }
-
-  Serial.println(F("Done."));
-}
-
-void printSettings() {
-  printIdSetting();
-  printDirectionSetting();
-  printSpeedSetting();
-  printDeadbandSetting();
-  printSoftStartSetting();
-  printRangeLeftAPVSetting();
-  printRangeRightAPVSetting();
-  printRangeCenterAPVSetting();
-  printFailSafeSetting();
-  printPowerLimitSetting();
-  printOverloadProtectionSetting();
-  printSmartSenseSetting();
-  printSensitivityRatioSetting();
-}
-
-void resetSettingsToFactoryDefaults() {
-  /* Print a copy of the servo settings, so the user has a backup copy of the
-  previous settings if they change their mind after resetting it. */
-  Serial.println(F("Current servo settings:"));
-  printSettings();
-
-  Serial.println(F(
-    "Reset all settings to factory defaults? Enter \"y\" or \"n\":"));
-  if (!scanYesNo()) {
-    goto cancel;
-  }
-  if (!checkSupportedModel()) {
-    goto cancel;
-  }
-
-  settings = HitecDSettings();
-  saveSettings();
-
-  if (!servo.isModelSupported()) {
-    /* The servo library doesn't know the default values of rangeLeftAPV/etc.,
-    but we just reset the servo, so we know the current values must be the
-    default values. Record those values. */
-    defaultRangeLeftAPV = settings.rangeLeftAPV;
-    defaultRangeRightAPV = settings.rangeRightAPV;
-    defaultRangeCenterAPV = settings.rangeCenterAPV;
-  }
-
-  Serial.println(F("New servo settings:"));
-  printSettings();
-
-  return;
-
-cancel:
-  Serial.println(F("Settings will not be reset to factory defaults."));
-}
-
 void setup() {
   int res;
 
   Serial.begin(115200);
+  Serial.println(F(
+    "===== Welcome to HitecDServo Programmer! =====\r\n"
+    "Note: This is an amateur project, not endorsed by Hitec. This is not\r\n"
+    "guaranteed to work, and could potentially even damage your servo."));
 
   int16_t pin;
   Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
@@ -139,7 +71,6 @@ void setup() {
   if ((res = servo.attach(pin)) != HITECD_OK) {
     printErr(res, true);
   }
-
   if ((modelNumber = servo.readModelNumber()) < 0) {
     printErr(modelNumber, true);
   }
@@ -152,7 +83,7 @@ void setup() {
 
   setupModelSpecs();
 
-  printSettings();
+  printAllSettings();
 
   Serial.println(F(
     "===================================================================="));
@@ -200,7 +131,7 @@ void loop() {
   scanRawInput();
   if (parseWord(F("show"))) {
     Serial.println(F("Current servo settings:"));
-    printSettings();
+    printAllSettings();
   } else if (parseWord(F("move"))) {
     askAndMoveToMicros();
   } else if (parseWord(F("id"))) {

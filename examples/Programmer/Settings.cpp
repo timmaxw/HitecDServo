@@ -2,7 +2,9 @@
 
 #include "CommandLine.h"
 #include "ModelSpecs.h"
+#include "Move.h"
 #include "Programmer.h"
+#include "RangeSettings.h"
 
 void printValueWithDefault(int16_t value, int16_t defaultValue) {
   Serial.print(value, DEC);
@@ -15,6 +17,49 @@ void printValueWithDefault(int16_t value, int16_t defaultValue) {
   } else {
     Serial.println(F(" (default unknown)"));
   }
+}
+
+void printAllSettings() {
+  printIdSetting();
+  printDirectionSetting();
+  printSpeedSetting();
+  printDeadbandSetting();
+  printSoftStartSetting();
+  printRangeLeftAPVSetting();
+  printRangeRightAPVSetting();
+  printRangeCenterAPVSetting();
+  printFailSafeSetting();
+  printPowerLimitSetting();
+  printOverloadProtectionSetting();
+  printSmartSenseSetting();
+  printSensitivityRatioSetting();
+}
+
+void saveSettings() {
+  int res;
+  Serial.println(F("Saving new servo settings..."));
+
+  /* Writing the settings starts by resetting the servo to factory settings,
+  which will overwrite any gentle-movement settings. */
+  usingGentleMovementSettings = false;
+
+  res = servo.writeSettingsUnsupportedModelThisMightDamageTheServo(
+    settings,
+    allowUnsupportedModel
+  );
+  if (res != HITECD_OK) {
+    printErr(res, true);
+  }
+
+  /* Wait for servo to reboot */
+  delay(1000);
+
+  /* Read back the settings to make sure we have the latest values. */
+  if ((res = servo.readSettings(&settings)) != HITECD_OK) {
+    printErr(res, true);
+  }
+
+  Serial.println(F("Done."));
 }
 
 void printIdSetting() {
@@ -404,3 +449,38 @@ cancel:
   Serial.println(F("Current sensitivity ratio will be kept."));
 }
 
+void resetSettingsToFactoryDefaults() {
+  /* Print a copy of the servo settings, so the user has a backup copy of the
+  previous settings if they change their mind after resetting it. */
+  Serial.println(F("Current servo settings:"));
+  printAllSettings();
+
+  Serial.println(F(
+    "Reset all settings to factory defaults? Enter \"y\" or \"n\":"));
+  if (!scanYesNo()) {
+    goto cancel;
+  }
+  if (!checkSupportedModel()) {
+    goto cancel;
+  }
+
+  settings = HitecDSettings();
+  saveSettings();
+
+  if (!servo.isModelSupported()) {
+    /* The servo library doesn't know the default values of rangeLeftAPV/etc.,
+    but we just reset the servo, so we know the current values must be the
+    default values. Record those values. */
+    defaultRangeLeftAPV = settings.rangeLeftAPV;
+    defaultRangeRightAPV = settings.rangeRightAPV;
+    defaultRangeCenterAPV = settings.rangeCenterAPV;
+  }
+
+  Serial.println(F("New servo settings:"));
+  printAllSettings();
+
+  return;
+
+cancel:
+  Serial.println(F("Settings will not be reset to factory defaults."));
+}
