@@ -1,4 +1,6 @@
-# Main patterns
+# Serial protocol
+This document contains "lab notes" from reverse-engineering the serial protocol between the Hitec DPC-11 programmer and the servo.
+
 ## Electrical protocol
 The programmer and the servo communicate via a half-duplex serial connection at 115200 baud, inverted polarity, 8 bits, no parity bit, 1 stop bit.
 - When idle, the line is low (0V).
