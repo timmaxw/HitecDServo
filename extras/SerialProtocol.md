@@ -185,8 +185,8 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 - Default value is 0x2000.
 
 ## Register 0xB0: EPA right point
-- Describes physical servo position corresponding to a max-length pulse (2150us)
-    - https://www.servocity.com/d485hw-servo/ claims max-length pulse is 2350us; I believe this is an error.
+- Describes physical servo position corresponding to a "max-length" pulse (2150us)
+    - Note 2150us isn't the _actual_ max pulse length; the servo will actually recognize pulses up to 2350us, moving past the EPA right point.
 - Follows same convention as 0x0C register.
 - Default value is 0x32CA. This corresponds to approximately +65-75 degrees clockwise if 0x5E (direction) is in CW mode (or the reverse in CCW mode)
 - When changing EPA points, value is temporarily set to 0x3FCD.
