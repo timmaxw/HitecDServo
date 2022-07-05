@@ -15,9 +15,9 @@ codes are as follows: */
 /* No servo detected. */
 #define HITECD_ERR_NO_SERVO (-102)
 
-/* Either the servo is still booting (which takes 1000ms) or the pullup resistor
-is missing. (Use a 2k resistor with a 5V microcontroller, or a 1k resistor with
-a 3.3V microcontroller.) */
+/* Either the servo is still booting, which takes 1000ms; or the pullup resistor
+is missing. With a 5V microcontroller, use a 2k pullup resistor to +5V. With a
+3.3V microcontroller, use a 1k pullup resistor to +3.3V. */
 #define HITECD_ERR_BOOTING_OR_NO_PULLUP (-103)
 
 /* Corrupt response from servo. */
@@ -29,15 +29,16 @@ a 3.3V microcontroller.) */
 /* Confusing response from servo. */
 #define HITECD_ERR_CONFUSED (-106)
 
-/* hitecdErrToString() returns a string description of the given error code. You
-can print this with Serial for debugging purposes. For example:
-  int res = doSomething();
-  if (res < 0) {
-    Serial.print("Something went wrong: ");
-    Serial.println(hitecdErrToString(res));
-  }
-*/
-const char *hitecdErrToString(int err);
+/* `hitecdErrToString()` returns a string description of the given error code.
+You can print this with Serial for debugging purposes. For example:
+    int res = doSomething();
+    if (res < 0) {
+      Serial.print("Something went wrong: ");
+      Serial.println(hitecdErrToString(res));
+    }
+(Note, `const __FlashStringHelper *` is the type returned by Arduino's `F()`
+macro. This saves SRAM by allowing the error messages to be stored in flash.) */
+const __FlashStringHelper *hitecdErrToString(int err);
 
 struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.

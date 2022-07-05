@@ -1,25 +1,27 @@
 #include "HitecDServo.h"
 
-const char *hitecdErrToString(int err) {
+const __FlashStringHelper *hitecdErrToString(int err) {
   if (err >= 0) {
-    return "OK";
+    return F("OK");
   }
   switch (err) {
     case HITECD_ERR_NOT_ATTACHED:
-      return "attach() was not called, or the call to attach() failed.";
+      return F("attach() was not called, or the call to attach() failed.");
     case HITECD_ERR_NO_SERVO:
-      return "No servo detected.";
+      return F("No servo detected.");
     case HITECD_ERR_BOOTING_OR_NO_PULLUP:
-      return "Either the servo is still booting (which takes 1000ms) or the " \
-        "pullup resistor is missing.";
+      return F("Either the servo is still booting, which takes 1000ms; or the "
+        "pullup resistor is missing. With a 5V microcontroller, use a 2k "
+        "pullup resistor to +5V. With a 3.3V microcontroller, use a 1k pullup "
+        "resistor to +3.3V.");
     case HITECD_ERR_CORRUPT:
-      return "Corrupt response from servo.";
+      return F("Corrupt response from servo.");
     case HITECD_ERR_UNSUPPORTED_MODEL:
-      return "Unsupported model of servo.";
+      return F("Unsupported model of servo.");
     case HITECD_ERR_CONFUSED:
-      return "Confusing response from servo.";
+      return F("Confusing response from servo.");
     default:
-      return "Unknown error.";
+      return F("Unknown error.");
   }
 }
 
