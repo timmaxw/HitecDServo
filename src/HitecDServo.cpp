@@ -1,91 +1,5 @@
 #include "HitecDServo.h"
 
-const __FlashStringHelper *hitecdErrToString(int err) {
-  if (err >= 0) {
-    return F("OK");
-  }
-  switch (err) {
-    case HITECD_ERR_NOT_ATTACHED:
-      return F("attach() was not called, or the call to attach() failed.");
-    case HITECD_ERR_NO_SERVO:
-      return F("No servo detected.");
-    case HITECD_ERR_BOOTING_OR_NO_PULLUP:
-      return F("Either the servo is still booting, which takes 1000ms; or the "
-        "pullup resistor is missing. With a 5V microcontroller, use a 2k "
-        "pullup resistor to +5V. With a 3.3V microcontroller, use a 1k pullup "
-        "resistor to +3.3V.");
-    case HITECD_ERR_CORRUPT:
-      return F("Corrupt response from servo.");
-    case HITECD_ERR_UNSUPPORTED_MODEL:
-      return F("Unsupported model of servo.");
-    case HITECD_ERR_CONFUSED:
-      return F("Confusing response from servo.");
-    default:
-      return F("Unknown error.");
-  }
-}
-
-HitecDSettings::HitecDSettings() :
-  id(defaultId),
-  counterclockwise(defaultCounterclockwise),
-  speed(defaultSpeed),
-  deadband(defaultDeadband),
-  softStart(defaultSoftStart),
-  rangeLeftAPV(-1),
-  rangeRightAPV(-1),
-  rangeCenterAPV(-1),
-  failSafe(defaultFailSafe),
-  failSafeLimp(defaultFailSafeLimp),
-  powerLimit(defaultPowerLimit),
-  overloadProtection(defaultOverloadProtection),
-  smartSense(defaultSmartSense),
-  sensitivityRatio(defaultSensitivityRatio)
-{ }
-
-int16_t HitecDSettings::defaultRangeLeftAPV(int modelNumber) {
-  switch (modelNumber) {
-    case 485: return 3381;
-    default: return -1;
-  }
-}
-
-int16_t HitecDSettings::defaultRangeRightAPV(int modelNumber) {
-  switch (modelNumber) {
-    case 485: return 13002;
-    default: return -1;
-  }
-}
-
-int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
-  switch (modelNumber) {
-    case 485: return 8192;
-    default: return -1;
-  }
-}
-
-int16_t HitecDSettings::widestRangeLeftAPV(int modelNumber) {
-  switch (modelNumber) {
-    /* I measured 731, and added +50 as a margin of error */
-    case 485: return 731 + 50;
-    default: return -1;
-  }
-}
-
-int16_t HitecDSettings::widestRangeRightAPV(int modelNumber) {
-  int16_t min = widestRangeLeftAPV(modelNumber);
-  if (min == -1) {
-    return -1;
-  }
-  return 0x3FFF - min;
-}
-
-int16_t HitecDSettings::widestRangeCenterAPV(int modelNumber) {
-  if (widestRangeLeftAPV(modelNumber) == -1) {
-    return -1;
-  }
-  return 8192;
-}
-
 HitecDServo::HitecDServo() : pin(-1) { }
 
 int HitecDServo::attach(int _pin) {
@@ -723,3 +637,88 @@ void HitecDServo::writeByte(uint8_t val) {
 #error "HitecDServo library only works on AVR processors."
 #endif
 
+HitecDSettings::HitecDSettings() :
+  id(defaultId),
+  counterclockwise(defaultCounterclockwise),
+  speed(defaultSpeed),
+  deadband(defaultDeadband),
+  softStart(defaultSoftStart),
+  rangeLeftAPV(-1),
+  rangeRightAPV(-1),
+  rangeCenterAPV(-1),
+  failSafe(defaultFailSafe),
+  failSafeLimp(defaultFailSafeLimp),
+  powerLimit(defaultPowerLimit),
+  overloadProtection(defaultOverloadProtection),
+  smartSense(defaultSmartSense),
+  sensitivityRatio(defaultSensitivityRatio)
+{ }
+
+int16_t HitecDSettings::defaultRangeLeftAPV(int modelNumber) {
+  switch (modelNumber) {
+    case 485: return 3381;
+    default: return -1;
+  }
+}
+
+int16_t HitecDSettings::defaultRangeRightAPV(int modelNumber) {
+  switch (modelNumber) {
+    case 485: return 13002;
+    default: return -1;
+  }
+}
+
+int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
+  switch (modelNumber) {
+    case 485: return 8192;
+    default: return -1;
+  }
+}
+
+int16_t HitecDSettings::widestRangeLeftAPV(int modelNumber) {
+  switch (modelNumber) {
+    /* I measured 731, and added +50 as a margin of error */
+    case 485: return 731 + 50;
+    default: return -1;
+  }
+}
+
+int16_t HitecDSettings::widestRangeRightAPV(int modelNumber) {
+  int16_t min = widestRangeLeftAPV(modelNumber);
+  if (min == -1) {
+    return -1;
+  }
+  return 0x3FFF - min;
+}
+
+int16_t HitecDSettings::widestRangeCenterAPV(int modelNumber) {
+  if (widestRangeLeftAPV(modelNumber) == -1) {
+    return -1;
+  }
+  return 8192;
+}
+
+const __FlashStringHelper *hitecdErrToString(int err) {
+  if (err >= 0) {
+    return F("OK");
+  }
+  switch (err) {
+    case HITECD_ERR_NOT_ATTACHED:
+      return F("attach() was not called, or the call to attach() failed.");
+    case HITECD_ERR_NO_SERVO:
+      return F("No servo detected.");
+    case HITECD_ERR_BOOTING_OR_NO_PULLUP:
+      return F("Either the servo is still booting, which takes 1000ms; or the "
+        "pullup resistor is missing. With a 5V microcontroller, use a 2k "
+        "pullup resistor to +5V. With a 3.3V microcontroller, use a 1k pullup "
+        "resistor to +3.3V.");
+    case HITECD_ERR_CORRUPT:
+      return F("Corrupt response from servo.");
+    case HITECD_ERR_UNSUPPORTED_MODEL:
+      return F("Unsupported model of servo.");
+    case HITECD_ERR_CONFUSED:
+      return F("Confusing response from servo.");
+    default:
+      return F("Unknown error.");
+  }
+}

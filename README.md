@@ -60,12 +60,17 @@ For full documentation, see [HitecDServo.h](src/HitecDServo.h).
 ## Using as a programmer
 The [Programmer](examples/Programmer/Programmer.ino) example sketch turns your Arduino into an interactive servo programmer. Upload it to the Arduino, then use the Arduino Serial Monitor at 152000 baud to interactively read/write the settings of your Hitec D-series servo that's attached to the Arduino.
 
-## Supported Hitec D-series servo models
+## Details
+
+### Supported Hitec D-series servo models
 Right now, the library has only been tested with a Hitec D485HW servo. Other models might work, but it's not guaranteed.
 
 Want to help improve support for other Hitec D-series servo models? If you run the [Programmer](examples/Programmer/Programmer.ino) example sketch with an unsupported servo model, it will print some diagnostic information on the Arduino Serial Monitor. Please [open a GitHub issue](https://github.com/timmaxw/HitecDServo/issues/new) with the diagnostic information.
 
-## Supported Arduino models
+### Supported Arduino models
 The library has been tested with an Arduino Uno.
 
 Non-AVR architectures are not supported. (The library synchronously bit-bangs the serial protocol, and this depends on exact instruction cycle counts.)
+
+### Serial protocol details
+See [extras/SerialProtocol.md](extras/SerialProtocol.md) for some "lab notes" on reverse-engineering the serial protocol between the Hitec DPC-11 programmer and the servo.
