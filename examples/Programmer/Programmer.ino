@@ -41,8 +41,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F(
     "===== Welcome to HitecDServo Programmer! =====\r\n"
-    "Note: This is an amateur project, not endorsed by Hitec. This is not\r\n"
-    "guaranteed to work, and could potentially even damage your servo."));
+    "Note: This tool is not endorsed by Hitec, not guaranteed to work, and\r\n"
+    "could potentially even damage your servo."));
 
   int16_t pin;
   Serial.println(F("Enter the Arduino pin that the servo is attached to:"));
