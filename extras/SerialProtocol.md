@@ -1,6 +1,6 @@
 # Main patterns
 ## Electrical protocol
-The programmer and the servo communicate via a half-duplex serial connection at 115.2k baud, inverted polarity, 8 bits, no parity bit, 1 stop bit.
+The programmer and the servo communicate via a half-duplex serial connection at 115200 baud, inverted polarity, 8 bits, no parity bit, 1 stop bit.
 - When idle, the line is low (0V).
 - When the programmer is transmitting, it drives the line low (0V) or high (about 2V).
 - When the servo is transmitting, the programmer weakly pulls the line high (about 2V) and the servo drives it low (0V) to transmit. See "Read" below.
@@ -28,12 +28,14 @@ If the servo receives a serial command, it will disregard any subsequent PWM pul
 # Registers
 ## Register 0x06: Unknown
 - Read at startup, returns 0x4ABF. (Note about convention: 0x4ABF means low=0xBF and high=0x4A.)
+- I speculate this might be a manufacturing date code? 0x4ABF in decimal is 19135, which could refer to "the 135th day of 2019".
 
 ## Register 0x00: Model number
 - Read (twice) at startup, returns 0x01E5. In decimal this is 485, and the servo is model D485.
 
 ## Register 0x04: Unknown
 - Read at startup, returns 0x0024.
+- I speculate this might be a firmware version number?
 
 ## Register 0x5E: Direction
 - 0x0000 means clockwise (default)

@@ -8,7 +8,7 @@ Hitec D-series servos have many settings that can be programmed using Hitec's pr
 ## Pull-up resistor
 The library works with the servo attached to any digital pin, even if not PWM-capable. However, you must attach a 2-kiloohm pullup resistor between the digital pin and the +5V power supply. (If you're using a 3.3V microcontroller, then instead attach a 1-kiloohm pullup resistor between the digital pin and the +3.3V power supply.)
 
-![Diagram of pullup resistor](extras/Pullup%20resistor%20diagram.svg)
+![Diagram of pullup resistor](extras/PullupResistorDiagram.svg)
 
 ## Using as a library
 To program the servo settings from an Arduino sketch, declare a `HitecDServo` instance and use the `writeSettings()` method:
