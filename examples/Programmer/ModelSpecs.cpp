@@ -11,7 +11,7 @@ void setupUnsupportedModelSpecs() {
     "the D485HW model is fully supported. To improve support for your\r\n"
     "servo model, please open a GitHub issue at\r\n"
     "<https://github.com/timmaxw/HitecDServo/issues/new>\r\n"
-    "Include the following following debug information:"
+    "Include the following following diagnostic information:"
   ));
 
   static uint8_t registersToDebug[] = {

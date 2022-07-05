@@ -1,8 +1,9 @@
 /* ===== Welcome to HitecDServo Programmer! =====
 
-This sketch is a full-featured servo programmer. Upload it to the Arduino, then
-use the Serial Monitor at 152000 baud to interactively read/write the settings
-of your Hitec D-series servo that's attached to the Arduino.
+This sketch turns your Arduino into an interactive servo programmer. Upload it
+to the Arduino, then use the Arduino Serial Monitor at 152000 baud to
+interactively read/write the settings of your Hitec D-series servo that's
+attached to the Arduino.
 
 (Although this sketch is in the "examples" section, it's quite complex and not
 actually a good example to learn how to use the HitecDServo library.) */
