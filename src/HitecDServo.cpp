@@ -90,7 +90,7 @@ HitecDServo::HitecDServo() : pin(-1) { }
 
 int HitecDServo::attach(int _pin) {
   if (attached()) {
-    detach();
+    detachAndReset();
   }
 
   pin = _pin;
@@ -106,25 +106,25 @@ int HitecDServo::attach(int _pin) {
   uint16_t temp;
 
   if ((res = readRawRegister(0x00, &temp)) != HITECD_OK) {
-    detach();
+    detachAndReset();
     return res;
   }
   modelNumber = temp;
 
   if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
-    detach();
+    detachAndReset();
     return res;
   }
   rangeLeftAPV = temp;
 
   if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
-    detach();
+    detachAndReset();
     return res;
   }
   rangeRightAPV = temp;
 
   if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
-    detach();
+    detachAndReset();
     return res;
   }
   rangeCenterAPV = temp;
@@ -136,7 +136,9 @@ bool HitecDServo::attached() {
   return (pin != -1);
 }
 
-void HitecDServo::detach() {
+void HitecDServo::detachAndReset() {
+  writeRawRegister(0x46, 0x0001);
+
   pin = -1;
 }
 

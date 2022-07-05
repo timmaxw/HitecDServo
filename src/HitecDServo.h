@@ -3,46 +3,89 @@
 
 #include <Arduino.h>
 
-/* Many of the functions in this library return error codes. The possible error
-codes are as follows: */
+class HitecDSettings;
 
-/* OK (no error occurred) */
-#define HITECD_OK 1
+class HitecDServo {
+public:
+  HitecDServo();
 
-/* attach() was not called, or the call to attach() failed. */
-#define HITECD_ERR_NOT_ATTACHED (-101)
+  /* Attach the HitecDServo to the given pin. Any digital pin works, even if
+  it's not PWM-capable. If it successfully communicates with the servo, returns
+  HITECD_OK; if it fails, returns an error code (see below). */
+  int attach(int pin);
 
-/* No servo detected. */
-#define HITECD_ERR_NO_SERVO (-102)
+  /* True if currently attached, false if not. */
+  bool attached();
 
-/* Either the servo is still booting, which takes 1000ms; or the pullup resistor
-is missing. With a 5V microcontroller, use a 2k pullup resistor to +5V. With a
-3.3V microcontroller, use a 1k pullup resistor to +3.3V. */
-#define HITECD_ERR_BOOTING_OR_NO_PULLUP (-103)
+  /* Detaches from the servo, and also tells the servo to reset itself. (If the
+  servo is not reset, it will not respond to normal PWM commands.) */
+  void detachAndReset();
 
-/* Corrupt response from servo. */
-#define HITECD_ERR_CORRUPT (-104)
+  /* Write the servo's target point (i.e. tell the servo to move somewhere).
+  - writeTargetMicroseconds() expresses the target as microseconds of PWM width.
+  - writeTargetQuarterMicros() expresses the target as quarter-microseconds of
+    PWM width, which is more precise.
+  In both cases, the command will be sent to the servo via the serial protocol.
+  */
+  void writeTargetMicroseconds(int16_t microseconds);
+  void writeTargetQuarterMicros(int16_t quarterMicros);
 
-/* Unsupported model of servo. (Only D485HW is fully supported.) */
-#define HITECD_ERR_UNSUPPORTED_MODEL (-105)
+  /* Reads the servo's current point. You can use this to measure the servo's
+  progress towards its target point. These three methods return the same value,
+  but expressed in different units. (See HitecDSettings for an explanation of
+  what "APV" is.) */
+  int16_t readCurrentMicroseconds();
+  int16_t readCurrentQuarterMicros();
+  int16_t readCurrentAPV();
 
-/* Confusing response from servo. */
-#define HITECD_ERR_CONFUSED (-106)
+  /* Returns the servo's model number, e.g. 485 for a D485HW model. */
+  int readModelNumber();
 
-/* `hitecdErrToString()` returns a string description of the given error code.
-You can print this with Serial for debugging purposes. For example:
-    int res = doSomething();
-    if (res < 0) {
-      Serial.print("Something went wrong: ");
-      Serial.println(hitecdErrToString(res));
-    }
-(Note, `const __FlashStringHelper *` is the type returned by Arduino's `F()`
-macro. This saves SRAM by allowing the error messages to be stored in flash.) */
-const __FlashStringHelper *hitecdErrToString(int err);
+  /* Returns whether this model of servo is considered fully-supported by this
+  version of the HitecDServo library. */
+  bool isModelSupported();
+
+  /* Retrieves the current settings from the servo. */
+  int readSettings(HitecDSettings *settingsOut);
+
+  /* Resets the servo to its factory-default settings, then uploads the given
+  settings, and reboots the servo. The servo will not respond to any commands
+  for 1000ms after rebooting; so after writeSettings() returns, make sure to
+  wait 1000ms before trying to do anything else with the servo.
+
+  Note: Right now, this only works for the D485HW model. Other models
+  will return an error. */
+  int writeSettings(const HitecDSettings &settings);
+
+  /* It's dangerous to change the settings of a non-D485HW model; this hasn't
+  been tested, and might damage the servo. If you're willing to take the risk,
+  you can use writeSettingsUnsupportedModelThisMightDamageTheServo() with
+  allowUnsupportedModel=true to skip checking the servo model. */
+  int writeSettingsUnsupportedModelThisMightDamageTheServo(
+    const HitecDSettings &settings,
+    bool allowUnsupportedModel);
+
+  /* Directly read/write registers on the servo. Don't use this unless you know
+  what you're doing. (The only reason these methods are declared public is so
+  that examples/Programmer can access them for diagnostics and such.) */
+  int readRawRegister(uint8_t reg, uint16_t *valOut);
+  void writeRawRegister(uint8_t reg, uint16_t val);
+
+private:
+  void writeByte(uint8_t value);
+  int readByte();
+
+  int pin;
+  uint8_t pinBitMask;
+  volatile uint8_t *pinInputRegister, *pinOutputRegister;
+
+  int modelNumber;
+  int16_t rangeLeftAPV, rangeRightAPV, rangeCenterAPV;
+};
+
 
 struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.
-
   `rangeLeftAPV`, `rangeCenterAPV`, and `rangeRightAPV` will be set to -1;
   this isn't the factory-default value, but it will cause `writeSettings()` to
   keep the factory-default value. */
@@ -179,72 +222,41 @@ struct HitecDSettings {
   static const int16_t defaultSensitivityRatio = 4095;
 };
 
-class HitecDServo {
-public:
-  HitecDServo();
+/* Many of the functions in this library return error codes. The possible error
+codes are as follows: */
 
-  int attach(int pin);
-  bool attached();
-  void detach();
+/* OK (no error occurred) */
+#define HITECD_OK 1
 
-  /* Write the servo's target point (i.e. tell the servo to move somewhere).
-  - writeTargetMicroseconds() expresses the target as microseconds of PWM width.
-  - writeTargetQuarterMicros() expresses the target as quarter-microseconds of
-    PWM width, which is more precise. In both cases, the target will be sent to
-    the servo via the serial protocol. */
-  void writeTargetMicroseconds(int16_t microseconds);
-  void writeTargetQuarterMicros(int16_t quarterMicros);
+/* attach() was not called, or the call to attach() failed. */
+#define HITECD_ERR_NOT_ATTACHED (-101)
 
-  /* Reads the servo's current point. You can use this to measure the servo's
-  progress towards its target point. These three methods return the same value,
-  but expressed in different units. */
-  int16_t readCurrentMicroseconds();
-  int16_t readCurrentQuarterMicros();
-  int16_t readCurrentAPV();
+/* No servo detected. */
+#define HITECD_ERR_NO_SERVO (-102)
 
-  /* Returns the servo's model number, e.g. 485 for a D485HW model. */
-  int readModelNumber();
+/* Either the servo is still booting, which takes 1000ms; or the pullup resistor
+is missing. With a 5V microcontroller, use a 2k pullup resistor to +5V. With a
+3.3V microcontroller, use a 1k pullup resistor to +3.3V. */
+#define HITECD_ERR_BOOTING_OR_NO_PULLUP (-103)
 
-  /* Returns whether this model of servo is considered fully-supported by this
-  version of the HitecDServo library. */
-  bool isModelSupported();
+/* Corrupt response from servo. */
+#define HITECD_ERR_CORRUPT (-104)
 
-  /* Retrieves the current settings from the servo. */
-  int readSettings(HitecDSettings *settingsOut);
+/* Unsupported model of servo. (Only D485HW is fully supported.) */
+#define HITECD_ERR_UNSUPPORTED_MODEL (-105)
 
-  /* Resets the servo to its factory-default settings, then uploads the given
-  settings, and reboots the servo. The servo will not respond to any commands
-  for 1000ms after rebooting; so after writeSettings() returns, make sure to
-  wait 1000ms before trying to do anything else with the servo.
+/* Confusing response from servo. */
+#define HITECD_ERR_CONFUSED (-106)
 
-  Note: Right now, this only works for the D485HW model. Other models
-  will return an error. */
-  int writeSettings(const HitecDSettings &settings);
-
-  /* It's dangerous to change the settings of a non-D485HW model; this hasn't
-  been tested, and might damage the servo. If you're willing to take the risk,
-  you can use writeSettingsUnsupportedModelThisMightDamageTheServo() with
-  allowUnsupportedModel=true to skip checking the servo model. */
-  int writeSettingsUnsupportedModelThisMightDamageTheServo(
-    const HitecDSettings &settings,
-    bool allowUnsupportedModel);
-
-  /* Directly read/write registers on the servo. Don't use this unless you know
-  what you're doing. (The only reason these methods are declared public is so
-  that tests, etc. can access them.) */
-  int readRawRegister(uint8_t reg, uint16_t *valOut);
-  void writeRawRegister(uint8_t reg, uint16_t val);
-
-private:
-  void writeByte(uint8_t value);
-  int readByte();
-
-  int pin;
-  uint8_t pinBitMask;
-  volatile uint8_t *pinInputRegister, *pinOutputRegister;
-
-  int modelNumber;
-  int16_t rangeLeftAPV, rangeRightAPV, rangeCenterAPV;
-};
+/* `hitecdErrToString()` returns a string description of the given error code.
+You can print this with Serial for debugging purposes. For example:
+    int res = doSomething();
+    if (res < 0) {
+      Serial.print("Something went wrong: ");
+      Serial.println(hitecdErrToString(res));
+    }
+(Note, `const __FlashStringHelper *` is the type returned by Arduino's `F()`
+macro. This saves SRAM by allowing the error messages to be stored in flash.) */
+const __FlashStringHelper *hitecdErrToString(int err);
 
 #endif /* HitecDServo_h */
