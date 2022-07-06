@@ -135,10 +135,10 @@ struct HitecDSettings {
   /* `rangeLeftAPV`, `rangeRightAPV` and `rangeCenterAPV` define the servo's
   physical range of motion and its neutral point.
   
-  Internally, the D-series servos measure the physical servo angle using a
-  potentiometer. The angle potentiometer's values are represented as numbers
-  from 0 to HITECD_APV_MAX (=2**14-1). In this library, the abbreviation "APV"
-  stands for "Angle Potentiometer Value".
+  What is "APV"? Internally, the D-series servos measure the physical servo
+  angle using a potentiometer. The angle potentiometer's values are represented
+  as numbers from 0 to HITECD_APV_MAX (=2**14-1). In this library, the
+  abbreviation "APV" stands for "Angle Potentiometer Value".
 
   PWM pulse widths are related to APVs as follows:
   - If the servo receives a 850us pulse, it will move to `rangeLeftAPV`.
@@ -175,7 +175,7 @@ struct HitecDSettings {
   /* If the servo isn't receiving a signal, it will move to a default position
   defined by a pulse width of `failSafe` microseconds. If `failSafeLimp=true`,
   then instead the servo will go limp. If `failSafe=0` and `failSafeLimp=false`,
-  the servo will hold its previous position (this is the default). */
+  the servo will hold its previous position (this behavior is the default). */
   int16_t failSafe;
   bool failSafeLimp;
   static const int16_t defaultFailSafe = 0;
@@ -201,6 +201,11 @@ struct HitecDSettings {
   - 30 (reduce power to 30% of max power)
   - 40 (reduce power to 40% of max power)
   - 50 (reduce power to 50% of max power)
+
+  This is multiplicative with `powerLimit`; for example, if `powerLimit=50` and
+  `overloadProtection=50`, then if overload protection kicks in, the servo will
+  use 25% of the maximum possible power.
+
   (Note, the DPC-11 manual claims that the X% setting will reduce power _by_ X%.
   I think this is an error; in my tests, the X% setting appears to reduce power
   _to_ X%.) */
@@ -209,7 +214,7 @@ struct HitecDSettings {
 
   /* `smartSense` is a Hitec proprietary feature that "allows the servo to
   analyse operational feed back and automatically make on the fly parameter
-  adjustments to optimize performance". */
+  adjustments to optimize performance", according to the Hitec manual. */
   bool smartSense;
   static const bool defaultSmartSense = true;
 
@@ -257,7 +262,6 @@ You can print this with Serial for debugging purposes. For example:
 (Note, `const __FlashStringHelper *` is the type returned by Arduino's `F()`
 macro. This saves SRAM by allowing the error messages to be stored in flash.) */
 const __FlashStringHelper *hitecdErrToString(int err);
-
 
 /* The theoretical range of APVs is from 0 to HITECD_APV_MAX.
 Warning: The servo can't physically move to the extreme ends of the range, and
