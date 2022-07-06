@@ -4,28 +4,33 @@
 The DPC-11 software may require some extra steps to get working. The following steps worked for me on Windows 10 Home (version 10.0.19042 build 19042).
 
 1. In the Windows control panel, find "Turn Windows features on or off". Enable the feature called ".NET Framework 3.5 (includes .NET 2.0 and 3.0)".
+
 2. Disable Windows driver signature verification. There are several ways of doing this. One way is as follows:
-   * In the Start menu, click Power, then hold Shift while clicking the "Restart" button.
-   * A screen will appear saying "Choose an option". Click on "Troubleshoot", then "Advanced options", then "Startup settings", then "Restart".
-   * Your computer will restart. You'll see a screen saying "startup settings". Press 7 to select "Disable driver signature enforcement".
-   * Windows will boot normally, but driver signature enforcement will be disabled until the next time you reboot. Note that you need to re-disable Windows driver signature verification every time you reboot your PC.
+    * In the Start menu, click Power, then hold Shift while clicking the "Restart" button.
+    * A screen will appear saying "Choose an option". Click on "Troubleshoot", then "Advanced options", then "Startup settings", then "Restart".
+    * Your computer will restart. You'll see a screen saying "startup settings". Press 7 to select "Disable driver signature enforcement".
+    * Windows will boot normally, but driver signature enforcement will be disabled until the next time you reboot. Note that you need to re-disable Windows driver signature verification every time you reboot your PC.
+
 3. Follow the instructions that came with the DPC-11 to install the DPC-11 control software:
-   * Download the DPC-11 installation file from https://hitecrcd.com/products/servos/programmers/dpc-11/product
-   * Extract the .ZIP file into a directory.
-   * Run the DPC-11_Setup installer.
-   * The installer should work normally. If you get a message about needing "dotnet framework 2.0.50727", double-check that you ran Step 1 above.
+    * Download the DPC-11 installation file from https://hitecrcd.com/products/servos/programmers/dpc-11/product
+    * Extract the .ZIP file into a directory.
+    * Run the DPC-11_Setup installer.
+    * The installer should work normally. If you get a message about needing "dotnet framework 2.0.50727", double-check that you ran Step 1 above.
+
 4. Connect the DPC-11 dongle to your PC.
-   * You will see a popup saying something like "CP2102 USB to UART Bridge Controller has been configured". However, the DPC-11 won't actually work yet. Proceed to the next step.
+    * You will see a popup saying something like "CP2102 USB to UART Bridge Controller has been configured". However, the DPC-11 won't actually work yet. Proceed to the next step.
+
 5. Open the Windows Device Manager and look for the dongle in the list.
-   * It will appear under "Other devices" as "CP2102 USB to UART Bridge Controller".
-   * Double-click on it to open the Properties window. The "Device Status" will say "The drivers for this device are not installed. (Code 28)"
-   * Click "Update Driver".
-   * "Browse my computer for drivers". Browse to the folder where you unpacked the DPC-11 software .ZIP file. Select the folder "HITECRCD_DPC-11 Driver Installer".
-   * You'll get a Windows Security popup saying that the driver may be unsafe. Click "Install this driver anyway".
-   * In the Windows Device Manager list, the DPC-11 should now appear under "Universal Serial Bus controllers" as "HITECRCD_DPC-11". If you double-click on it, the "Device Status" should say "This device is working properly."
+    * It will appear under "Other devices" as "CP2102 USB to UART Bridge Controller".
+    * Double-click on it to open the Properties window. The "Device Status" will say "The drivers for this device are not installed. (Code 28)"
+    * Click "Update Driver".
+    * "Browse my computer for drivers". Browse to the folder where you unpacked the DPC-11 software .ZIP file. Select the folder "HITECRCD_DPC-11 Driver Installer".
+    * You'll get a Windows Security popup saying that the driver may be unsafe. Click "Install this driver anyway".
+    * In the Windows Device Manager list, the DPC-11 should now appear under "Universal Serial Bus controllers" as "HITECRCD_DPC-11". If you double-click on it, the "Device Status" should say "This device is working properly."
+
 6. Now, you can open the DPC-11 application and use it normally.
-   * If the DPC-11 is connected, the app startup screen should show a green box saying "DPC-11 is connected".
-   * If you instead see a red box saying "DPC-11 is not connected", double-check that you disabled Windows driver signature verification by following Step 2 above, and that you haven't rebooted your PC since the last time you disabled Windows driver signature verification. (And of course, double-check that the DPC-11 is actually connected!)
+    * If the DPC-11 is connected, the app startup screen should show a green box saying "DPC-11 is connected".
+    * If you instead see a red box saying "DPC-11 is not connected", double-check that you disabled Windows driver signature verification by following Step 2 above, and that you haven't rebooted your PC since the last time you disabled Windows driver signature verification. (And of course, double-check that the DPC-11 is actually connected!)
 
 ## Details of DPC-11 behavior
 
@@ -189,9 +194,9 @@ odd (all three return 0x0000).
 ### Change EPA
 1. Read RANGE_LEFT_APV, RANGE_CENTER_APV, RANGE_RIGHT_APV
 2. Write RANGE_RIGHT_APV, RANGE_LEFT_APV, RANGE_CENTER_APV to extreme values:
-   * RANGE_LEFT_APV=0x0032 (this is 0x0000 + 50)
-   * RANGE_CENTER_APV=0x2000 (this is midway between 0x0000 and 0x3FFF)
-   * RANGE_RIGHT_APV=0x3FCD (this is 0x3FFF - 50)
+    * RANGE_LEFT_APV=0x0032 (this is 0x0000 + 50)
+    * RANGE_CENTER_APV=0x2000 (this is midway between 0x0000 and 0x3FFF)
+    * RANGE_RIGHT_APV=0x3FCD (this is 0x3FFF - 50)
 3. Write SPEED=5 (25% of max speed)
 4. Write 0x50=0x3FFF and 0x52=0x0000
 5. Write SAVE=SAVE_CONST
@@ -199,17 +204,17 @@ odd (all three return 0x0000).
 7. Write POWER_LIMIT=400 (20% of max power)
 8. Write TARGET
 9. When slider is dragged, write TARGET with number in red.
-   * Note that min=400=0x0190 and max=5600=0x15E0
+    * Note that min=400=0x0190 and max=5600=0x15E0
 10. When Left/Right/Center buttons are pressed, read CURRENT_APV and remember
   results. (We'll call these values left_APV, right_APV, and center_APV.)
 11. When OK button is pressed:
-   * Write RANGE_CENTER_APV = center_APV
-   * Write RANGE_LEFT_APV = center_APV+round((left_APV-center_APV)*(650/600)).
-     The 650/600 correction factor is because left_APV maps to a 900us pulse, but
-     RANGE_LEFT_APV maps to a 850us pulse. 
-   * Write RANGE_RIGHT_APV = center_APV+round((right_APV-center_APV)*(650/600)).
-     The 650/600 correction factor is because right_APV maps to a 2100us pulse,
-     but RANGE_RIGHT_APV maps to a 2150us pulse.
+    * Write RANGE_CENTER_APV = center_APV
+    * Write RANGE_LEFT_APV = center_APV+round((left_APV-center_APV)*(650/600)).
+      The 650/600 correction factor is because left_APV maps to a 900us pulse, but
+      RANGE_LEFT_APV maps to a 850us pulse. 
+    * Write RANGE_RIGHT_APV = center_APV+round((right_APV-center_APV)*(650/600)).
+      The 650/600 correction factor is because right_APV maps to a 2100us pulse,
+      but RANGE_RIGHT_APV maps to a 2150us pulse.
 12. Write SPEED back to original value
 13. Write TARGET, delay 1000ms
 14. Write POWER_LIMIT=0x0FFF
