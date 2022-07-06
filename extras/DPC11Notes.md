@@ -169,9 +169,9 @@ odd (all three return 0x0000).
 2. Read RANGE_RIGHT_APV, RANGE_LEFT_APV, RANGE_CENTER_APV
 3. Write DIRECTION to the opposite of before
 4. Write:
-  - RANGE_LEFT_APV = 0x3FFF - old_right_APV
-  - RANGE_RIGHT_APV = 0x3FFF - old_left_APV
-  - RANGE_CENTER_APV = 0x3FFF - old_center_APV
+   * RANGE_LEFT_APV = 0x3FFF - old_right_APV
+   * RANGE_RIGHT_APV = 0x3FFF - old_left_APV
+   * RANGE_CENTER_APV = 0x3FFF - old_center_APV
 5. Write SAVE=SAVE_CONST
 6. Write REBOOT=REBOOT_CONST
 7. Write 0x22=0x1000
@@ -189,9 +189,9 @@ odd (all three return 0x0000).
 ### Change EPA
 1. Read RANGE_LEFT_APV, RANGE_CENTER_APV, RANGE_RIGHT_APV
 2. Write RANGE_RIGHT_APV, RANGE_LEFT_APV, RANGE_CENTER_APV to extreme values:
-  - RANGE_LEFT_APV=0x0032 (this is 0x0000 + 50)
-  - RANGE_CENTER_APV=0x2000 (this is midway between 0x0000 and 0x3FFF)
-  - RANGE_RIGHT_APV=0x3FCD (this is 0x3FFF - 50)
+   * RANGE_LEFT_APV=0x0032 (this is 0x0000 + 50)
+   * RANGE_CENTER_APV=0x2000 (this is midway between 0x0000 and 0x3FFF)
+   * RANGE_RIGHT_APV=0x3FCD (this is 0x3FFF - 50)
 3. Write SPEED=5 (25% of max speed)
 4. Write 0x50=0x3FFF and 0x52=0x0000
 5. Write SAVE=SAVE_CONST
@@ -199,17 +199,17 @@ odd (all three return 0x0000).
 7. Write POWER_LIMIT=400 (20% of max power)
 8. Write TARGET
 9. When slider is dragged, write TARGET with number in red.
-  - Note that min=400=0x0190 and max=5600=0x15E0
+   * Note that min=400=0x0190 and max=5600=0x15E0
 10. When Left/Right/Center buttons are pressed, read CURRENT_APV and remember
   results. (We'll call these values left_APV, right_APV, and center_APV.)
 11. When OK button is pressed:
-  - Write RANGE_CENTER_APV = center_APV
-  - Write RANGE_LEFT_APV = center_APV+round((left_APV-center_APV)*(650/600)).
-    The 650/600 correction factor is because left_APV maps to a 900us pulse, but
-    RANGE_LEFT_APV maps to a 850us pulse. 
-  - Write RANGE_RIGHT_APV = center_APV+round((right_APV-center_APV)*(650/600)).
-    The 650/600 correction factor is because right_APV maps to a 2100us pulse,
-    but RANGE_RIGHT_APV maps to a 2150us pulse.
+   * Write RANGE_CENTER_APV = center_APV
+   * Write RANGE_LEFT_APV = center_APV+round((left_APV-center_APV)*(650/600)).
+     The 650/600 correction factor is because left_APV maps to a 900us pulse, but
+     RANGE_LEFT_APV maps to a 850us pulse. 
+   * Write RANGE_RIGHT_APV = center_APV+round((right_APV-center_APV)*(650/600)).
+     The 650/600 correction factor is because right_APV maps to a 2100us pulse,
+     but RANGE_RIGHT_APV maps to a 2150us pulse.
 12. Write SPEED back to original value
 13. Write TARGET, delay 1000ms
 14. Write POWER_LIMIT=0x0FFF
