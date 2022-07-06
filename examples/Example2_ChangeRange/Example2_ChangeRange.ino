@@ -1,3 +1,6 @@
+/* This example shows how to change the servo's range setting to use the full
+range that the servo is physically capable of. */
+
 #include <HitecDServo.h>
 
 HitecDServo servo;
@@ -7,17 +10,22 @@ void setup() {
 
   Serial.begin(115200);
 
-  int servo_pin = 2;
-  result = servo.attach(servo_pin);
+  int servoPin = 2;
+  result = servo.attach(servoPin);
 
   /* Always check that the return value is HITECD_OK. If not, this can indicate
   a problem communicating with the servo. */
   if (result != HITECD_OK) { printError(result); }
 
-  /* Reduce the servo's speed to 50% and reverse the direction. */
+  int modelNumber = servo.readModelNumber();
+
+  /* rangeLeftAPV and rangeRightAPV define where the servo will move when it
+  receives a 850us or 2150us PWM pulse, respectively. Use the helper functions
+  widestRangeLeftAPV() and widestRangeRightAPV() to get the safe min/max values
+  for this model of servo. */
   HitecDSettings settings;
-  settings.speed = 50;
-  settings.counterclockwise = true;
+  settings.rangeLeftAPV = HitecDSettings::widestRangeLeftAPV(modelNumber);
+  settings.rangeRightAPV = HitecDSettings::widestRangeRightAPV(modelNumber);
   result = servo.writeSettings(settings);
   if (result != HITECD_OK) { printError(result); }
 

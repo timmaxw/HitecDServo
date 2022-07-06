@@ -22,8 +22,8 @@ void setup() {
 
   Serial.begin(115200);
 
-  int servo_pin = 2;
-  result = servo.attach(servo_pin);
+  int servoPin = 2;
+  result = servo.attach(servoPin);
 
   /* Always check that the return value is HITECD_OK. If not, this can indicate
   a problem communicating with the servo. */
