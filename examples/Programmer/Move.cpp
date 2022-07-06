@@ -1,5 +1,7 @@
 #include "Move.h"
 
+#include <HitecDServoInternal.h>
+
 #include "CommandLine.h"
 #include "Programmer.h"
 
@@ -72,7 +74,8 @@ itself. */
 
 bool usingGentleMovementSettings = false;
 
-uint16_t saved0xB2, saved0xC2, saved0xB0, saved0x54, saved0x56;
+uint16_t savedRangeLeftAPV, savedRangeRightAPV, savedRangeCenterAPV;
+uint16_t savedSpeed, savedPowerLimit;
 
 void useGentleMovementSettings() {
   if (usingGentleMovementSettings) {
@@ -83,30 +86,40 @@ void useGentleMovementSettings() {
     "Temporarily changing servo settings to widest range & low power..."));
 
   int res;
-  if ((res = servo.readRawRegister(0xB2, &saved0xB2)) != HITECD_OK) {
+  if ((res = servo.readRawRegister(
+      HD_REG_RANGE_LEFT_APV, &savedRangeLeftAPV))!= HITECD_OK) {
     printErr(res, true);
   }
-  if ((res = servo.readRawRegister(0xC2, &saved0xC2)) != HITECD_OK) {
+  if ((res = servo.readRawRegister(
+      HD_REG_RANGE_RIGHT_APV, &savedRangeRightAPV)) != HITECD_OK) {
     printErr(res, true);
   }
-  if ((res = servo.readRawRegister(0xB0, &saved0xB0)) != HITECD_OK) {
+  if ((res = servo.readRawRegister(
+      HD_REG_RANGE_CENTER_APV, &savedRangeCenterAPV)) != HITECD_OK) {
     printErr(res, true);
   }
-  if ((res = servo.readRawRegister(0x54, &saved0x54)) != HITECD_OK) {
+  if ((res = servo.readRawRegister(
+      HD_REG_SPEED, &savedSpeed)) != HITECD_OK) {
     printErr(res, true);
   }
-  if ((res = servo.readRawRegister(0x56, &saved0x56)) != HITECD_OK) {
+  if ((res = servo.readRawRegister(
+      HD_REG_POWER_LIMIT, &savedPowerLimit)) != HITECD_OK) {
     printErr(res, true);
   }
 
-  servo.writeRawRegister(0xB2, GENTLE_MOVEMENT_RANGE_LEFT_APV);
-  servo.writeRawRegister(0xC2, GENTLE_MOVEMENT_RANGE_CENTER_APV);
-  servo.writeRawRegister(0xB0, GENTLE_MOVEMENT_RANGE_RIGHT_APV);
-  servo.writeRawRegister(0x54, 0x0005);
-  servo.writeRawRegister(0x56, 0x0190);
+  servo.writeRawRegister(
+    HD_REG_RANGE_LEFT_APV, GENTLE_MOVEMENT_RANGE_LEFT_APV);
+  servo.writeRawRegister(
+    HD_REG_RANGE_RIGHT_APV, GENTLE_MOVEMENT_RANGE_RIGHT_APV);
+  servo.writeRawRegister(
+    HD_REG_RANGE_CENTER_APV, GENTLE_MOVEMENT_RANGE_CENTER_APV);
+  servo.writeRawRegister(
+    HD_REG_SPEED, 5);
+  servo.writeRawRegister(
+    HD_REG_POWER_LIMIT, 400);
 
-  servo.writeRawRegister(0x70, 0xFFFF);
-  servo.writeRawRegister(0x46, 0x0001);
+  servo.writeRawRegister(HD_REG_SAVE, HD_SAVE_CONST);
+  servo.writeRawRegister(HD_REG_REBOOT, HD_REBOOT_CONST);
   delay(1000);
 
   Serial.println(F("Done."));
@@ -120,14 +133,19 @@ void undoGentleMovementSettings() {
 
   Serial.println(F("Undoing temporary changes to servo settings..."));
 
-  servo.writeRawRegister(0xB2, saved0xB2);
-  servo.writeRawRegister(0xC2, saved0xC2);
-  servo.writeRawRegister(0xB0, saved0xB0);
-  servo.writeRawRegister(0x54, saved0x54);
-  servo.writeRawRegister(0x56, saved0x56);
+  servo.writeRawRegister(
+    HD_REG_RANGE_LEFT_APV, savedRangeLeftAPV);
+  servo.writeRawRegister(
+    HD_REG_RANGE_RIGHT_APV, savedRangeRightAPV);
+  servo.writeRawRegister(
+    HD_REG_RANGE_CENTER_APV, savedRangeCenterAPV);
+  servo.writeRawRegister(
+    HD_REG_SPEED, savedSpeed);
+  servo.writeRawRegister(
+    HD_REG_POWER_LIMIT, savedPowerLimit);
 
-  servo.writeRawRegister(0x70, 0xFFFF);
-  servo.writeRawRegister(0x46, 0x0001);
+  servo.writeRawRegister(HD_REG_SAVE, HD_SAVE_CONST);
+  servo.writeRawRegister(HD_REG_REBOOT, HD_REBOOT_CONST);
   delay(1000);
 
   /* Read back the settings to make sure we have the latest values. */

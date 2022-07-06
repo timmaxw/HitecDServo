@@ -73,4 +73,4 @@ The library has been tested with an Arduino Uno.
 Non-AVR architectures are not supported. (The library synchronously bit-bangs the serial protocol, and this depends on exact instruction cycle counts.)
 
 ### Serial protocol details
-See [extras/SerialProtocol.md](extras/SerialProtocol.md) for some "lab notes" on reverse-engineering the serial protocol between the Hitec DPC-11 programmer and the servo.
+See [src/HitecDServoInternal.h](src/HitecDServoInternal.h) for notes on the details of the serial protocol between the Hitec DPC-11 programmer and the servo. See [extras/DPC11Notes.md](extras/DPC11Notes.md) for some additional notes about the behavior of the DPC-11 programmer.

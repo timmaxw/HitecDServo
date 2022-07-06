@@ -134,7 +134,7 @@ struct HitecDSettings {
   static const int8_t defaultSoftStart = 20;
 
   /* `rangeLeftAPV`, `rangeRightAPV` and `rangeCenterAPV` define the servo's
-  physical range of motion.
+  physical range of motion and its neutral point.
   
   Internally, the D-series servos measure the physical servo angle using a
   potentiometer. The angle potentiometer's values are represented as numbers

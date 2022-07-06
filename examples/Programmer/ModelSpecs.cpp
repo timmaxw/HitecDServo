@@ -1,5 +1,7 @@
 #include "ModelSpecs.h"
 
+#include <HitecDServoInternal.h>
+
 #include "CommandLine.h"
 #include "Programmer.h"
 #include "Move.h"
@@ -15,22 +17,41 @@ void setupUnsupportedModelSpecs() {
   ));
 
   static uint8_t registersToDebug[] = {
-    /* Model number register */
-    0x00,
+    HD_REG_MODEL_NUMBER,
 
     /* Settings registers. I want to know if the default values are different
     for other models. */
-    0x32, 0x44, 0x4C, 0x4E, 0x54, 0x5E, 0x60, 0x64, 0x66, 0x68, 0x6C, 0x9C,
-    0xB0, 0xB2, 0xC2,
+    HD_REG_ID,
+    HD_REG_DIRECTION,
+    HD_REG_SPEED,
+    HD_REG_DEADBAND_1,
+    HD_REG_DEADBAND_2,
+    HD_REG_DEADBAND_3,
+    HD_REG_SOFT_START,
+    HD_REG_RANGE_LEFT_APV,
+    HD_REG_RANGE_RIGHT_APV,
+    HD_REG_RANGE_CENTER_APV,
+    HD_REG_FAIL_SAFE,
+    HD_REG_POWER_LIMIT,
+    HD_REG_OVERLOAD_PROTECTION,
+    HD_REG_SMART_SENSE_1,
+    HD_REG_SMART_SENSE_2,
+    HD_REG_SENSITIVITY_RATIO,
 
-    /* Mystery registers that always seem to read a constant value on the
+    /* Registers that always seem to be read/written with constant values on the
     D485HW. I want to know if they return a different value on other models. */
-    0x04, 0x06, 0x8A, 0x8C, 0xC4, 0xD4, 0xD6,
-
-    /* Mystery registers that the DPC-11 always writes to a constant value on
-    the D485HW. I want to know if they are set to something else on other
-    models. */
-    0x50, 0x52, 0x56, 0x72, 0x98, 0x9A
+    HD_REG_SS_ENABLE_1,
+    HD_REG_SS_ENABLE_2,
+    HD_REG_SS_DISABLE_1,
+    HD_REG_SS_DISABLE_2,
+    HD_REG_MYSTERY_OP1,
+    HD_REG_MYSTERY_OP2,
+    HD_REG_MYSTERY_DB,
+    0x04,
+    0x06,
+    0x50,
+    0x52,
+    0xC4
   };
 
   for (int i = 0; i < (int)sizeof(registersToDebug); ++i) {

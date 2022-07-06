@@ -1,5 +1,7 @@
 #include "HitecDServo.h"
 
+#include "HitecDServoInternal.h"
+
 HitecDServo::HitecDServo() : pin(-1) { }
 
 int HitecDServo::attach(int _pin) {
@@ -19,25 +21,25 @@ int HitecDServo::attach(int _pin) {
   int res;
   uint16_t temp;
 
-  if ((res = readRawRegister(0x00, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_MODEL_NUMBER, &temp)) != HITECD_OK) {
     detachAndReset();
     return res;
   }
   modelNumber = temp;
 
-  if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_RANGE_LEFT_APV, &temp)) != HITECD_OK) {
     detachAndReset();
     return res;
   }
   rangeLeftAPV = temp;
 
-  if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_RANGE_RIGHT_APV, &temp)) != HITECD_OK) {
     detachAndReset();
     return res;
   }
   rangeRightAPV = temp;
 
-  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_RANGE_CENTER_APV, &temp)) != HITECD_OK) {
     detachAndReset();
     return res;
   }
@@ -51,7 +53,7 @@ bool HitecDServo::attached() {
 }
 
 void HitecDServo::detachAndReset() {
-  writeRawRegister(0x46, 0x0001);
+  writeRawRegister(HD_REG_REBOOT, HD_REBOOT_CONST);
 
   pin = -1;
 }
@@ -65,7 +67,7 @@ void HitecDServo::writeTargetQuarterMicros(int16_t quarterMicros) {
     return;
   }
   quarterMicros = constrain(quarterMicros, 4*850, 4*2150);
-  writeRawRegister(0x1E, quarterMicros - 3000);
+  writeRawRegister(HD_REG_TARGET, quarterMicros - 3000);
 }
 
 int16_t HitecDServo::readCurrentMicroseconds() {
@@ -94,7 +96,7 @@ int16_t HitecDServo::readCurrentAPV() {
   }
   int res;
   uint16_t currentAPV;
-  if ((res = readRawRegister(0x0C, &currentAPV)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_CURRENT_APV, &currentAPV)) != HITECD_OK) {
     return res;
   }
   return currentAPV;
@@ -126,33 +128,33 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
   uint16_t temp;
 
   /* Read ID */
-  if ((res = readRawRegister(0x32, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_ID, &temp)) != HITECD_OK) {
     return res;
   }
-  if (temp & 0xFF00) {
+  if (temp > 255) {
     return HITECD_ERR_CONFUSED;
   }
-  settingsOut->id = temp & 0xFF;
+  settingsOut->id = temp;
 
   /* Read counterclockwise */
-  if ((res = readRawRegister(0x5E, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_DIRECTION, &temp)) != HITECD_OK) {
     return res;
   }
-  if (temp == 0x0000) {
+  if (temp == HD_DIRECTION_CLOCKWISE) {
     settingsOut->counterclockwise = false;
-  } else if (temp == 0x0001) {
+  } else if (temp == HD_DIRECTION_COUNTERCLOCKWISE) {
     settingsOut->counterclockwise = true;
   } else {
     return HITECD_ERR_CONFUSED;
   }
 
   /* Read speed */
-  if ((res = readRawRegister(0x54, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SPEED, &temp)) != HITECD_OK) {
     return res;
   }
   if (temp == 0x0FFF) {
     settingsOut->speed = 100;
-  } else if (temp <= 0x0012) {
+  } else if (temp < 20) {
     settingsOut->speed = temp*5;
   } else {
     return HITECD_ERR_CONFUSED;
@@ -160,61 +162,61 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
 
   /* Read deadband. There are three deadband-related registers; their values are
   expected to be consistent with each other. */
-  uint16_t temp0x4E, temp0x66, temp0x68;
-  if ((res = readRawRegister(0x4E, &temp0x4E)) != HITECD_OK) {
+  uint16_t deadband_1, deadband_2, deadband_3;
+  if ((res = readRawRegister(HD_REG_DEADBAND_1, &deadband_1)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x66, &temp0x66)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_DEADBAND_2, &deadband_2)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x68, &temp0x68)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_DEADBAND_3, &deadband_3)) != HITECD_OK) {
     return res;
   }
-  if (temp0x4E == 0x0001 && temp0x66 == 0x0005 && temp0x68 == 0x000B) {
+  if (deadband_1 == 1 && deadband_2 == 5 && deadband_3 == 11) {
     settingsOut->deadband = 1;
-  } else if (temp0x4E >= 0x0004 && temp0x4E <= 0x0024 && (temp0x4E % 4) == 0 &&
-      temp0x66 == temp0x4E + 0x0004 && temp0x68 == temp0x4E + 0x000A) {
-    settingsOut->deadband = temp0x4E / 4 + 1;
+  } else if (deadband_1 >= 4 && deadband_1 <= 36 && deadband_1 % 4 == 0 &&
+      deadband_2 == deadband_1 + 4 && deadband_3 == deadband_1 + 10) {
+    settingsOut->deadband = deadband_1 / 4 + 1;
   } else {
     return HITECD_ERR_CONFUSED;
   }
 
   /* Read softStart */
-  if ((res = readRawRegister(0x60, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SOFT_START, &temp)) != HITECD_OK) {
     return res;
   }
-  if (temp == 0x0001) {
+  if (temp == HD_SOFT_START_20) {
     settingsOut->softStart = 20;
-  } else if (temp == 0x0003) {
+  } else if (temp == HD_SOFT_START_40) {
     settingsOut->softStart = 40;
-  } else if (temp == 0x0006) {
+  } else if (temp == HD_SOFT_START_60) {
     settingsOut->softStart = 60;
-  } else if (temp == 0x0008) {
+  } else if (temp == HD_SOFT_START_80) {
     settingsOut->softStart = 80;
-  } else if (temp == 0x0064) {
+  } else if (temp == HD_SOFT_START_100) {
     settingsOut->softStart = 100;
   } else {
     return HITECD_ERR_CONFUSED;
   }
 
   /* Read rangeLeftAPV, rangeRightAPV, rangeCenterAPV */
-  if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_RANGE_LEFT_APV, &temp)) != HITECD_OK) {
     return res;
   }
   settingsOut->rangeLeftAPV = rangeLeftAPV = temp;
 
-  if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_RANGE_RIGHT_APV, &temp)) != HITECD_OK) {
     return res;
   }
   settingsOut->rangeRightAPV = rangeRightAPV = temp;
 
-  if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_RANGE_CENTER_APV, &temp)) != HITECD_OK) {
     return res;
   }
   settingsOut->rangeCenterAPV = rangeCenterAPV = temp;
 
   /* Read failSafe and failSafeLimp. (A single register controls both.) */
-  if ((res = readRawRegister(0x4C, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_FAIL_SAFE, &temp)) != HITECD_OK) {
     return res;
   }
   if (temp >= 850 && temp <= 2150) {
@@ -231,7 +233,7 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
   }
 
   /* Read powerLimit */
-  if ((res = readRawRegister(0x56, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_POWER_LIMIT, &temp)) != HITECD_OK) {
     return res;
   }
   if (temp == 0x0FFF) {
@@ -242,7 +244,7 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
   }
 
   /* Read overloadProtection */
-  if ((res = readRawRegister(0x9C, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_OVERLOAD_PROTECTION, &temp)) != HITECD_OK) {
     return res;
   }
   settingsOut->overloadProtection = temp;
@@ -253,38 +255,38 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
   set to values read from two other read-only registers, 0x8A and 0x8C. So we
   read all six registers and confirm the values follow one of the two expected
   patterns. */
-  uint16_t temp0x6C, temp0x44, temp0xD4, temp0xD6, temp0x8A, temp0x8C;
-  if ((res = readRawRegister(0x6C, &temp0x6C)) != HITECD_OK) {
+  uint16_t ss_1, ss_2, ss_enable_1, ss_enable_2, ss_disable_1, ss_disable_2;
+  if ((res = readRawRegister(HD_REG_SMART_SENSE_1, &ss_1)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x44, &temp0x44)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SMART_SENSE_2, &ss_2)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0xD4, &temp0xD4)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SS_ENABLE_1, &ss_enable_1)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0xD6, &temp0xD6)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SS_ENABLE_2, &ss_enable_2)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x8A, &temp0x8A)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SS_DISABLE_1, &ss_disable_1)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(0x8C, &temp0x8C)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SS_DISABLE_2, &ss_disable_2)) != HITECD_OK) {
     return res;
   }
-  if (temp0x6C == temp0xD4 && temp0x44 == temp0xD6) {
+  if (ss_1 == ss_enable_1 && ss_2 == ss_enable_2) {
     settingsOut->smartSense = true;
-  } else if (temp0x6C == temp0x8A && temp0x44 == temp0x8C) {
+  } else if (ss_1 == ss_disable_1 && ss_2 == ss_disable_2) {
     settingsOut->smartSense = false;
   } else {
     return HITECD_ERR_CONFUSED;
   }
 
   /* Read sensitivityRatio */
-  if ((res = readRawRegister(0x64, &temp)) != HITECD_OK) {
+  if ((res = readRawRegister(HD_REG_SENSITIVITY_RATIO, &temp)) != HITECD_OK) {
     return res;
   }
-  if (temp >= 819 && temp <= 4095) {
+  if (temp >= HD_SENSITIVITY_RATIO_MIN && temp <= HD_SENSITIVITY_RATIO_MAX) {
     settingsOut->sensitivityRatio = temp;
   } else {
     return HITECD_ERR_CONFUSED;
@@ -314,53 +316,53 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
 
   /* Reset to factory defaults. (We'll then ignore any settings that are already
   at the factory defaults.) */
-  writeRawRegister(0x6E, 0x0F0F);
+  writeRawRegister(HD_REG_FACTORY_RESET, HD_FACTORY_RESET_CONST);
 
   /* The DPC-11 always writes these registers to these constants after a factory
   reset, and also whenever it changes overloadProtection. I'm not sure why, but
   we do the same to be safe. */
-  writeRawRegister(0x98, 0x00C8);
-  writeRawRegister(0x9A, 0x0003);
+  writeRawRegister(HD_REG_MYSTERY_OP1, HD_MYSTERY_OP1_CONST);
+  writeRawRegister(HD_REG_MYSTERY_OP2, HD_MYSTERY_OP2_CONST);
 
   /* Write id */
   if (settings.id != HitecDSettings::defaultId) {
-    writeRawRegister(0x32, settings.id);
+    writeRawRegister(HD_REG_ID, settings.id);
   }
 
   /* Write counterclockwise */
   if (settings.counterclockwise) {
-    writeRawRegister(0x5E, 0x0001);
+    writeRawRegister(HD_REG_DIRECTION, HD_DIRECTION_COUNTERCLOCKWISE);
   }
 
   /* Write speed */
   if (settings.speed != HitecDSettings::defaultSpeed) {
-    writeRawRegister(0x54, settings.speed / 5);
+    writeRawRegister(HD_REG_SPEED, settings.speed / 5);
   }
 
   /* Write deadband */
   if (settings.deadband != HitecDSettings::defaultDeadband) {
     /* The DPC-11 always writes this register to the this constant whenever it
     changes the deadband. I'm not sure why, but we do the same to be safe. */
-    writeRawRegister(0x72, 0x4E54);
+    writeRawRegister(HD_REG_MYSTERY_DB, HD_MYSTERY_DB_CONST);
  
     /* Note, these formulas are wrong if deadband=1, but deadband=1 is the
     factory default, so that's OK. */
-    writeRawRegister(0x4E, 0x0004*settings.deadband - 0x0004);
-    writeRawRegister(0x66, 0x0004*settings.deadband);
-    writeRawRegister(0x68, 0x0004*settings.deadband + 0x0006);
+    writeRawRegister(HD_REG_DEADBAND_1, 4 * settings.deadband - 4);
+    writeRawRegister(HD_REG_DEADBAND_2, 4 * settings.deadband);
+    writeRawRegister(HD_REG_DEADBAND_3, 4 * settings.deadband + 6);
   }
 
   /* Write softStart */
   if (settings.softStart != HitecDSettings::defaultSoftStart) {
     /* Note, we omit the softStart=20 case because it's the factory default. */
     if (settings.softStart == 40) {
-      writeRawRegister(0x60, 0x0003);
+      writeRawRegister(HD_REG_SOFT_START, HD_SOFT_START_40);
     } else if (settings.softStart == 60) {
-      writeRawRegister(0x60, 0x0006);
+      writeRawRegister(HD_REG_SOFT_START, HD_SOFT_START_60);
     } else if (settings.softStart == 80) {
-      writeRawRegister(0x60, 0x0008);
+      writeRawRegister(HD_REG_SOFT_START, HD_SOFT_START_80);
     } else if (settings.softStart == 100) {
-      writeRawRegister(0x60, 0x0064);
+      writeRawRegister(HD_REG_SOFT_START, HD_SOFT_START_100);
     }
   }
 
@@ -371,10 +373,10 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
   if (settings.rangeLeftAPV != -1 &&
       settings.rangeLeftAPV !=
         HitecDSettings::defaultRangeLeftAPV(modelNumber)) {
-    writeRawRegister(0xB2, settings.rangeLeftAPV);
+    writeRawRegister(HD_REG_RANGE_LEFT_APV, settings.rangeLeftAPV);
     rangeLeftAPV = settings.rangeLeftAPV;
   } else {
-    if ((res = readRawRegister(0xB2, &temp)) != HITECD_OK) {
+    if ((res = readRawRegister(HD_REG_RANGE_LEFT_APV, &temp)) != HITECD_OK) {
       return res;
     }
     rangeLeftAPV = temp;
@@ -383,10 +385,10 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
   if (settings.rangeRightAPV != -1 &&
       settings.rangeRightAPV !=
         HitecDSettings::defaultRangeRightAPV(modelNumber)) {
-    writeRawRegister(0xB0, settings.rangeRightAPV);
+    writeRawRegister(HD_REG_RANGE_RIGHT_APV, settings.rangeRightAPV);
     rangeRightAPV = settings.rangeRightAPV;
   } else {
-     if ((res = readRawRegister(0xB0, &temp)) != HITECD_OK) {
+     if ((res = readRawRegister(HD_REG_RANGE_RIGHT_APV, &temp)) != HITECD_OK) {
       return res;
     }
     rangeRightAPV = temp;
@@ -395,31 +397,31 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
   if (settings.rangeCenterAPV != -1 &&
       settings.rangeCenterAPV !=
         HitecDSettings::defaultRangeCenterAPV(modelNumber)) {
-    writeRawRegister(0xC2, settings.rangeCenterAPV);
+    writeRawRegister(HD_REG_RANGE_CENTER_APV, settings.rangeCenterAPV);
     rangeCenterAPV = settings.rangeCenterAPV;
   } else {
-    if ((res = readRawRegister(0xC2, &temp)) != HITECD_OK) {
+    if ((res = readRawRegister(HD_REG_RANGE_CENTER_APV, &temp)) != HITECD_OK) {
       return res;
     }
     rangeCenterAPV = temp;
   }
 
   /* Write failSafe and failSafeLimp (controlled by same register) */
-  if (settings.failSafe != HitecDSettings::defaultFailSafe) {
-    writeRawRegister(0x4C, settings.failSafe);
-  } else if (settings.failSafeLimp != HitecDSettings::defaultFailSafeLimp) {
-    writeRawRegister(0x4C, 0x0000);
+  if (settings.failSafe != 0) {
+    writeRawRegister(HD_REG_FAIL_SAFE, settings.failSafe);
+  } else if (settings.failSafeLimp) {
+    writeRawRegister(HD_REG_FAIL_SAFE, HD_FAIL_SAFE_LIMP);
   }
 
   /* Write powerLimit */
   if (settings.powerLimit != HitecDSettings::defaultPowerLimit) {
-    writeRawRegister(0x56, settings.powerLimit * 20);
+    writeRawRegister(HD_REG_POWER_LIMIT, settings.powerLimit * 20);
   }
 
   /* Write overloadProtection */
   if (settings.overloadProtection !=
       HitecDSettings::defaultOverloadProtection) {
-    writeRawRegister(0x9C, settings.overloadProtection);
+    writeRawRegister(HD_REG_OVERLOAD_PROTECTION, settings.overloadProtection);
   }
 
   /* Write smartSense */
@@ -427,34 +429,33 @@ int HitecDServo::writeSettingsUnsupportedModelThisMightDamageTheServo(
     /* The DPC-11 always writes this register to the this constant whenever it
     enables or disables smartSense. I'm not sure why, but we do the same to be
     safe. */
-    writeRawRegister(0x72, 0x4E54);
+    writeRawRegister(HD_REG_MYSTERY_DB, HD_MYSTERY_DB_CONST);
 
-    /* To disable smartSense, we have to write 0x6C and 0x44 to magic numbers
-    that we read from two read-only registers, 0x8A and 0x8C. */
-    if ((res = readRawRegister(0x8A, &temp)) != HITECD_OK) {
+    /* To disable smartSense, we have to read magic numbers from the two
+    SS_DISABLE_* registers and write them to the SMART_SENSE_* registers. */
+    if ((res = readRawRegister(HD_REG_SS_DISABLE_1, &temp)) != HITECD_OK) {
       return res;
     }
-    writeRawRegister(0x6C, temp);
+    writeRawRegister(HD_REG_SMART_SENSE_1, temp);
 
-    if ((res = readRawRegister(0x8C, &temp)) != HITECD_OK) {
+    if ((res = readRawRegister(HD_REG_SS_DISABLE_2, &temp)) != HITECD_OK) {
       return res;
     }
-    writeRawRegister(0x44, temp);
+    writeRawRegister(HD_REG_SMART_SENSE_2, temp);
   }
 
   /* Write sensitivityRatio */
   if (settings.sensitivityRatio != HitecDSettings::defaultSensitivityRatio) {
-    writeRawRegister(0x64, settings.sensitivityRatio);
+    writeRawRegister(HD_REG_SENSITIVITY_RATIO, settings.sensitivityRatio);
   }
 
-  /* Writing 0xFFFF to 0x70 tells the servo to save its settings to EEPROM */
-  writeRawRegister(0x70, 0xFFFF);
+  /* Save new settings to EEPROM */
+  writeRawRegister(HD_REG_SAVE, HD_SAVE_CONST);
 
-  /* Writing 0x0001 to 0x46 tells the servo to reset itself (necessary after
-  some settings changes) */
-  writeRawRegister(0x46, 0x0001);
+  /* Reboot the servo so the new settings take effect */
+  writeRawRegister(HD_REG_REBOOT, HD_REBOOT_CONST);
 
-  /* After writing to 0x46, the servo will take 1000ms to boot. During this
+  /* After writing to REBOOT, the servo will take 1000ms to boot. During this
   time, it won't respond to commands. The caller is responsible for waiting
   1000ms before trying to issue any commands. */
 
