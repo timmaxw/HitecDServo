@@ -174,9 +174,9 @@ odd (all three return 0x0000).
 2. Read RANGE_RIGHT_APV, RANGE_LEFT_APV, RANGE_CENTER_APV
 3. Write DIRECTION to the opposite of before
 4. Write:
-   * RANGE_LEFT_APV = 0x3FFF - old_right_APV
-   * RANGE_RIGHT_APV = 0x3FFF - old_left_APV
-   * RANGE_CENTER_APV = 0x3FFF - old_center_APV
+   * RANGE_LEFT_APV = HITECD_APV_MAX - old_right_APV
+   * RANGE_RIGHT_APV = HITECD_APV_MAX - old_left_APV
+   * RANGE_CENTER_APV = HITECD_APV_MAX - old_center_APV
 5. Write SAVE=SAVE_CONST
 6. Write REBOOT=REBOOT_CONST
 7. Write 0x22=0x1000
@@ -194,9 +194,9 @@ odd (all three return 0x0000).
 ### Change EPA
 1. Read RANGE_LEFT_APV, RANGE_CENTER_APV, RANGE_RIGHT_APV
 2. Write RANGE_RIGHT_APV, RANGE_LEFT_APV, RANGE_CENTER_APV to extreme values:
-    * RANGE_LEFT_APV=0x0032 (this is 0x0000 + 50)
-    * RANGE_CENTER_APV=0x2000 (this is midway between 0x0000 and 0x3FFF)
-    * RANGE_RIGHT_APV=0x3FCD (this is 0x3FFF - 50)
+    * RANGE_LEFT_APV=0x0032 (this is 50)
+    * RANGE_CENTER_APV=0x2000 (this is midway between 0 and HITECD_APV_MAX)
+    * RANGE_RIGHT_APV=0x3FCD (this is HITECD_APV_MAX - 50)
 3. Write SPEED=5 (25% of max speed)
 4. Write 0x50=0x3FFF and 0x52=0x0000
 5. Write SAVE=SAVE_CONST

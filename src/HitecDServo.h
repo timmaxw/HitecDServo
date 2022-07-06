@@ -83,7 +83,6 @@ private:
   int16_t rangeLeftAPV, rangeRightAPV, rangeCenterAPV;
 };
 
-
 struct HitecDSettings {
   /* The default constructor initializes the settings to factory-default values.
   `rangeLeftAPV`, `rangeCenterAPV`, and `rangeRightAPV` will be set to -1;
@@ -105,9 +104,9 @@ struct HitecDSettings {
   you've changed those settings to non-default values, you can use the following
   formulas to convert between the clockwise values and equivalent
   counterclockwise values:
-    settings.rangeLeftAPV = 16383 - prevRangeRightAPV;
-    settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
-    settings.rangeRightAPV = 16383 - prevRangeLeftAPV;
+    settings.rangeLeftAPV = HITECD_APV_MAX - prevRangeRightAPV;
+    settings.rangeCenterAPV = HITECD_APV_MAX - prevRangeCenterAPV;
+    settings.rangeRightAPV = HITECD_APV_MAX - prevRangeLeftAPV;
   */
   bool counterclockwise;
   static const bool defaultCounterclockwise = false;
@@ -138,8 +137,8 @@ struct HitecDSettings {
   
   Internally, the D-series servos measure the physical servo angle using a
   potentiometer. The angle potentiometer's values are represented as numbers
-  from 0 to 16383 (=2**14-1). In this library, the abbreviation "APV" stands for
-  "Angle Potentiometer Value".
+  from 0 to HITECD_APV_MAX (=2**14-1). In this library, the abbreviation "APV"
+  stands for "Angle Potentiometer Value".
 
   PWM pulse widths are related to APVs as follows:
   - If the servo receives a 850us pulse, it will move to `rangeLeftAPV`.
@@ -258,5 +257,12 @@ You can print this with Serial for debugging purposes. For example:
 (Note, `const __FlashStringHelper *` is the type returned by Arduino's `F()`
 macro. This saves SRAM by allowing the error messages to be stored in flash.) */
 const __FlashStringHelper *hitecdErrToString(int err);
+
+
+/* The theoretical range of APVs is from 0 to HITECD_APV_MAX.
+Warning: The servo can't physically move to the extreme ends of the range, and
+trying to do so might damage it. For actual safe min/max values, see
+widestRangeLeftAPV() and widestRangeRightAPV(). */
+#define HITECD_APV_MAX 16383 /* = 2**14 - 1 */
 
 #endif /* HitecDServo_h */

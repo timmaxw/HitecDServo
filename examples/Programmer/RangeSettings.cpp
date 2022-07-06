@@ -93,7 +93,7 @@ bool changeRangeSettingsDetect() {
   Serial.println(F("Moving left as far as possible..."));
   moveGentlyToAPV(50, &left);
   Serial.println(F("Moving right as far as possible..."));
-  moveGentlyToAPV(16333, &right);
+  moveGentlyToAPV(HITECD_APV_MAX - 50, &right);
   center = (left + right) / 2;
 
   Serial.print(F("Detected left limit: APV="));
@@ -215,7 +215,7 @@ bool changeRangeSettingsAPVHelper(int16_t *newAPVOut) {
   if (!parseNumber(newAPVOut)) {
     return false;
   }
-  if (*newAPVOut > 16383) {
+  if (*newAPVOut > HITECD_APV_MAX) {
     Serial.println(F("Error: Invalid APV."));
     return false;
   }

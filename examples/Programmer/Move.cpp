@@ -69,8 +69,8 @@ settings by moving the endpoints beyond the physical limits that the servo can
 actually reach; but reduce the servo power limit to 20% so it doesn't damage
 itself. */
 #define GENTLE_MOVEMENT_RANGE_LEFT_APV 50
-#define GENTLE_MOVEMENT_RANGE_CENTER_APV 8192
-#define GENTLE_MOVEMENT_RANGE_RIGHT_APV 16333
+#define GENTLE_MOVEMENT_RANGE_CENTER_APV (HITECD_APV_MAX / 2)
+#define GENTLE_MOVEMENT_RANGE_RIGHT_APV (HITECD_APV_MAX - 50)
 
 bool usingGentleMovementSettings = false;
 

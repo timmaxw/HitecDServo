@@ -84,7 +84,7 @@ void setupUnsupportedModelSpecs() {
     Serial.println(F("Moving left as far as possible..."));
     moveGentlyToAPV(50, &left);
     Serial.println(F("Moving right as far as possible..."));
-    moveGentlyToAPV(16333, &right);
+    moveGentlyToAPV(HITECD_APV_MAX - 50, &right);
     center = (left + right) / 2;
     undoGentleMovementSettings();
 
@@ -96,9 +96,9 @@ void setupUnsupportedModelSpecs() {
       widestRangeRightAPVClockwise = right;
       widestRangeCenterAPVClockwise = center;
     } else {
-      widestRangeLeftAPVClockwise = 16383 - right;
-      widestRangeRightAPVClockwise = 16383 - left;
-      widestRangeCenterAPVClockwise = 16383 - center;
+      widestRangeLeftAPVClockwise = HITECD_APV_MAX - right;
+      widestRangeRightAPVClockwise = HITECD_APV_MAX - left;
+      widestRangeCenterAPVClockwise = HITECD_APV_MAX - center;
     }
 
     Serial.println(F("Please include the following in the issue report:"));
@@ -154,7 +154,7 @@ int16_t widestRangeLeftAPV() {
   } else if (!settings.counterclockwise) {
     return widestRangeLeftAPVClockwise;
   } else {
-    return 16383 - widestRangeRightAPVClockwise;
+    return HITECD_APV_MAX - widestRangeRightAPVClockwise;
   }
 }
 
@@ -164,7 +164,7 @@ int16_t widestRangeRightAPV() {
   } else if (!settings.counterclockwise) {
     return widestRangeRightAPVClockwise;
   } else {
-    return 16383 - widestRangeLeftAPVClockwise;
+    return HITECD_APV_MAX - widestRangeLeftAPVClockwise;
   }
 }
 
@@ -174,7 +174,7 @@ int16_t widestRangeCenterAPV() {
   } else if (!settings.counterclockwise) {
     return widestRangeCenterAPVClockwise;
   } else {
-    return 16383 - widestRangeCenterAPVClockwise;
+    return HITECD_APV_MAX - widestRangeCenterAPVClockwise;
   }
 }
 

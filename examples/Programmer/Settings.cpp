@@ -134,9 +134,9 @@ void changeDirectionSetting() {
     int16_t prevRangeLeftAPV = settings.rangeLeftAPV;
     int16_t prevRangeRightAPV = settings.rangeRightAPV;
     int16_t prevRangeCenterAPV = settings.rangeCenterAPV;
-    settings.rangeLeftAPV = 16383 - prevRangeRightAPV;
-    settings.rangeRightAPV = 16383 - prevRangeLeftAPV;
-    settings.rangeCenterAPV = 16383 - prevRangeCenterAPV;
+    settings.rangeLeftAPV = HITECD_APV_MAX - prevRangeRightAPV;
+    settings.rangeRightAPV = HITECD_APV_MAX - prevRangeLeftAPV;
+    settings.rangeCenterAPV = HITECD_APV_MAX - prevRangeCenterAPV;
   }
 
   saveSettings();
