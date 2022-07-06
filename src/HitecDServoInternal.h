@@ -251,11 +251,16 @@ Mysterious registers
 I don't know what the following registers are for. These are just rough notes
 about how the registers appear to behave.
 
-- Registers 0x04 and 0x06: The DPC-11 reads these two registers when it first
-  connects to the servo, at the same time as it reads MODEL_NUMBER. Register
-  0x04 always returns 36, and register 0x06 always returns 19135. I have no
-  idea what "36" means; I speculate it might be a firmware version. "19135"
-  might be a manufacturing date code for "135th day of the year 2019".
+- Register 0x04: The DPC-11 always reads register 0x04 when it first connects to
+  the servo, at the same time as it reads MODEL_NUMBER. Register 0x04 always
+  returns 36. I don't know what this means; maybe a firmware version?
+
+- Register 0x06: The DPC-11 reads register 0x06 at the same time as MODEL_NUMBER
+  and register 0x04. It seems to always return a constant value for each servo,
+  but that constant differs between different servos of the same model, even
+  when reset to factory settings. The values are typically around 19000. I
+  speculate these are manufacturing date codes; e.g. 19135 could indicate
+  "135th day of the year 2019".
 
 - Register 0xC4: The DPC-11 also reads register 0xC4 during the startup process,
   but at a different time from MODEL_NUMBER. Always returns 1300. I have no idea
