@@ -12,7 +12,7 @@ The library works with the servo attached to any digital pin, even if not PWM-ca
 
 ## Using as a library
 To program the servo settings from an Arduino sketch, declare a `HitecDServo` instance and use the `writeSettings()` method:
-```
+```cpp
 #include <HitecDServo.h>
 
 HitecDServo servo;
