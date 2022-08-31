@@ -68,9 +68,9 @@ Right now, the library has only been tested with a Hitec D485HW servo. Other mod
 Want to help improve support for other Hitec D-series servo models? If you run the [Programmer](examples/Programmer/Programmer.ino) example sketch with an unsupported servo model, it will print some diagnostic information on the Arduino Serial Monitor. Please [open a GitHub issue](https://github.com/timmaxw/HitecDServo/issues/new) with the diagnostic information.
 
 ### Supported Arduino models
-The library has been tested with an Arduino Uno.
+The library has been tested with an Arduino Uno (5V, 16MHz) and a Sparkfun Pro Micro (3.3V, 8MHz).
 
-Non-AVR architectures are not supported. (The library synchronously bit-bangs the serial protocol, and this depends on exact instruction cycle counts.)
+Non-AVR architectures are not supported. (The library synchronously bit-bangs the serial protocol, and this depends on instruction cycle counts.)
 
 ### Serial protocol details
 See [src/HitecDServoInternal.h](src/HitecDServoInternal.h) for notes on the details of the serial protocol between the Hitec DPC-11 programmer and the servo. See [extras/DPC11Notes.md](extras/DPC11Notes.md) for some additional notes about the behavior of the DPC-11 programmer.
