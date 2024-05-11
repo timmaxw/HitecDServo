@@ -535,6 +535,21 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
   something's horribly wrong. So for simplicity, we just round this off to
   HITECD_ERR_CORRUPT. */
 
+  Serial.print("readRawRegister() reg=0x");
+  Serial.print(reg, HEX);
+  Serial.print(" const0x69=0x");
+  Serial.print(const0x69, HEX);
+  Serial.print(" mystery=0x");
+  Serial.print(mystery, HEX);
+  Serial.print(" reg2=0x");
+  Serial.print(reg2, HEX);
+  Serial.print(" low=0x");
+  Serial.print(low, HEX);
+  Serial.print(" high=0x");
+  Serial.print(high, HEX);
+  Serial.print(" checksum=0x");
+  Serial.println(checksum, HEX);
+
   if (const0x69 != 0x69) return HITECD_ERR_CORRUPT;
   if (mystery < 0) return HITECD_ERR_CORRUPT;
   if (reg2 != reg) return HITECD_ERR_CORRUPT;
@@ -605,6 +620,7 @@ int HitecDServo::readByte() {
 
   /* We expect to see stop bit (low) */
   if (*pinInputRegister & pinBitMask) {
+    Serial.println("readByte(): Missing stop bit!!")
     return HITECD_ERR_CORRUPT;
   }
 
