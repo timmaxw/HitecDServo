@@ -543,12 +543,14 @@ int HitecDServo::readRawRegister(uint8_t reg, uint16_t *valOut) {
   Serial.print(mystery, HEX);
   Serial.print(" reg2=0x");
   Serial.print(reg2, HEX);
+  Serial.print(" const0x02=0x");
+  Serial.print(const0x02, HEX);
   Serial.print(" low=0x");
   Serial.print(low, HEX);
   Serial.print(" high=0x");
   Serial.print(high, HEX);
-  Serial.print(" checksum=0x");
-  Serial.println(checksum, HEX);
+  Serial.print(" checksum2=0x");
+  Serial.println(checksum2, HEX);
 
   if (const0x69 != 0x69) return HITECD_ERR_CORRUPT;
   if (mystery < 0) return HITECD_ERR_CORRUPT;
