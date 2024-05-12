@@ -597,9 +597,11 @@ time elapsed will be 'us'. */
 #define DELAY_US_COMPENSATED(us, cycles) _delay_us((us) - (cycles)/(F_CPU/1e6))
 
 int HitecDServo::readByte() {
-  /* Wait up to 10ms for start bit. The "/ 15" factor arises because this loop
-  empirically takes about 15 clock cycles per iteration. */
-  int timeoutCounter = F_CPU * 0.010 / 15;
+  /* Wait up to 50ms for start bit. The "/ 10" factor arises because this loop
+  empirically takes somewhere on the order of 10 clock cycles per iteration.
+  (In theory we should only need to wait up to about 10ms, but the number of
+  clock-cycles-per-iteration is very imprecise, so we add a lot of padding.) */
+  int timeoutCounter = F_CPU * 0.050 / 10;
   while (!(*pinInputRegister & pinBitMask)) {
     if (--timeoutCounter == 0) {
       return HITECD_ERR_NO_SERVO;
