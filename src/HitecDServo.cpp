@@ -114,7 +114,7 @@ bool HitecDServo::isModelSupported() {
     return false;
   }
   switch (modelNumber) {
-    case 485: return true;
+    case HD_MODEL_NUMBER_D485HW: return true;
     default: return false;
   }
 }
@@ -160,22 +160,18 @@ int HitecDServo::readSettings(HitecDSettings *settingsOut) {
     return HITECD_ERR_CONFUSED;
   }
 
-  /* Read deadband. There are three deadband-related registers; their values are
-  expected to be consistent with each other. */
-  uint16_t deadband_1, deadband_2, deadband_3;
+  /* Read deadband. There are three deadband-related registers, and their values
+  are expected to be consistent with each other. We used to read all three
+  registers and assert the values were consistent; but occasionally the latter
+  two registers would read as 0, causing failures. So now we just read the first
+  register. The DPC-11 software also only reads the first register. */
+  uint16_t deadband_1;
   if ((res = readRawRegister(HD_REG_DEADBAND_1, &deadband_1)) != HITECD_OK) {
     return res;
   }
-  if ((res = readRawRegister(HD_REG_DEADBAND_2, &deadband_2)) != HITECD_OK) {
-    return res;
-  }
-  if ((res = readRawRegister(HD_REG_DEADBAND_3, &deadband_3)) != HITECD_OK) {
-    return res;
-  }
-  if (deadband_1 == 1 && deadband_2 == 5 && deadband_3 == 11) {
+  if (deadband_1 == 1) {
     settingsOut->deadband = 1;
-  } else if (deadband_1 >= 4 && deadband_1 <= 36 && deadband_1 % 4 == 0 &&
-      deadband_2 == deadband_1 + 4 && deadband_3 == deadband_1 + 10) {
+  } else if (deadband_1 >= 4 && deadband_1 <= 36 && deadband_1 % 4 == 0) {
     settingsOut->deadband = deadband_1 / 4 + 1;
   } else {
     return HITECD_ERR_CONFUSED;
@@ -601,9 +597,12 @@ time elapsed will be 'us'. */
 int HitecDServo::readByte() {
   /* Wait up to 50ms for start bit. The "/ 10" factor arises because this loop
   empirically takes somewhere on the order of 10 clock cycles per iteration.
-  (In theory we should only need to wait up to about 10ms, but the number of
-  clock-cycles-per-iteration is very imprecise, so we add a lot of padding.) */
-  int timeoutCounter = F_CPU * 0.050 / 10;
+  In theory we should only need to wait up to about 10ms, but the number of
+  clock-cycles-per-iteration is very imprecise and depends on the compiler, so
+  we add a lot of padding.
+  TODO: It would be better to write this logic in assembler so we can control
+  exactly how many clock cycles it takes. */
+  uint32_t timeoutCounter = F_CPU * 0.050 / 10;
   while (!(*pinInputRegister & pinBitMask)) {
     if (--timeoutCounter == 0) {
       return HITECD_ERR_NO_SERVO;
@@ -624,7 +623,7 @@ int HitecDServo::readByte() {
 
   /* We expect to see stop bit (low) */
   if (*pinInputRegister & pinBitMask) {
-    Serial.println("readByte(): Missing stop bit!!")
+    Serial.println("readByte(): Missing stop bit!!");
     return HITECD_ERR_CORRUPT;
   }
 
@@ -677,21 +676,21 @@ HitecDSettings::HitecDSettings() :
 
 int16_t HitecDSettings::defaultRangeLeftAPV(int modelNumber) {
   switch (modelNumber) {
-    case 485: return 3381;
+    case HD_MODEL_NUMBER_D485HW: return 3381;
     default: return -1;
   }
 }
 
 int16_t HitecDSettings::defaultRangeRightAPV(int modelNumber) {
   switch (modelNumber) {
-    case 485: return 13002;
+    case HD_MODEL_NUMBER_D485HW: return 13002;
     default: return -1;
   }
 }
 
 int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
   switch (modelNumber) {
-    case 485: return 8192;
+    case HD_MODEL_NUMBER_D485HW: return 8192;
     default: return -1;
   }
 }
@@ -699,7 +698,7 @@ int16_t HitecDSettings::defaultRangeCenterAPV(int modelNumber) {
 int16_t HitecDSettings::widestRangeLeftAPV(int modelNumber) {
   switch (modelNumber) {
     /* I measured 731, and added +50 as a margin of error */
-    case 485: return 731 + 50;
+    case HD_MODEL_NUMBER_D485HW: return 731 + 50;
     default: return -1;
   }
 }

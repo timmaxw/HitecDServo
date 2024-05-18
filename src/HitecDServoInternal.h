@@ -172,16 +172,20 @@ if it detects an overload condition. It ranges from 0 to 100. */
 #define HD_REG_SMART_SENSE_1 0x44
 #define HD_REG_SMART_SENSE_2 0x6C
 
-/* The SS_{ENABLE,DISABLE}_{1,2} registers appear to be read-only. They
-always return the same values. */
+/* The SS_{ENABLE,DISABLE}_{1,2} registers appear to be read-only. The values
+depend on the servo model, but otherwise they're constant. */
+
+/* 14000 for D485HW; 0 for D645MW */
 #define HD_REG_SS_ENABLE_1 0xD6
-#define HD_SS_ENABLE_1_CONST 14000
+
+/* 2000 for D485HW; 0 for D645MW */
 #define HD_REG_SS_ENABLE_2 0xD4
-#define HD_SS_ENABLE_2_CONST 2000
+
+/* 28000 for D485HW; 1800 for D645MW */
 #define HD_REG_SS_DISABLE_1 0x8C
-#define HD_SS_DISABLE_1_CONST 28000
+
+/* 4000 for D485HW; 1400 for D645MW */
 #define HD_REG_SS_DISABLE_2 0x8A
-#define HD_SS_DISABLE_2_CONST 4000
 
 /* SENSITIVITY_RATIO sets the sensitivity ratio. */
 #define HD_REG_SENSITIVITY_RATIO 0x64
@@ -193,8 +197,10 @@ Other important registers
 =========================
 */
 
-/* MODEL_NUMBER is the servo model number, e.g. 485 for the Hitec D485HW. */
+/* MODEL_NUMBER is the servo model number */
 #define HD_REG_MODEL_NUMBER 0x00
+#define HD_MODEL_NUMBER_D485HW 485
+#define HD_MODEL_NUMBER_D645MW 34645
 
 /* Writing SAVE=SAVE_CONST instructs the servo to flush settings from SRAM to
 EEPROM. If settings are not saved to EEPROM, they will be lost when the servo
@@ -253,14 +259,14 @@ about how the registers appear to behave.
 
 - Register 0x04: The DPC-11 always reads register 0x04 when it first connects to
   the servo, at the same time as it reads MODEL_NUMBER. Register 0x04 always
-  returns 36. I don't know what this means; maybe a firmware version?
+  returned 36 on the D485HW I tested, and 39 on the D645MW. I don't know what
+  this means; maybe a firmware version?
 
 - Register 0x06: The DPC-11 reads register 0x06 at the same time as MODEL_NUMBER
   and register 0x04. It seems to always return a constant value for each servo,
   but that constant differs between different servos of the same model, even
-  when reset to factory settings. The values are typically around 19000. I
-  speculate these are manufacturing date codes; e.g. 19135 could indicate
-  "135th day of the year 2019".
+  when reset to factory settings. The values were typically around 19000 for the
+  D485HWs I tested, and 58 for the D645MW.
 
 - Register 0xC4: The DPC-11 also reads register 0xC4 during the startup process,
   but at a different time from MODEL_NUMBER. Always returns 1300. I have no idea

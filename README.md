@@ -3,7 +3,9 @@ Arduino library to program and control [Hitec D-series](https://hitecrcd.com/pro
 
 Hitec D-series servos have many settings that can be programmed using Hitec's proprietary programmer. This Arduino library was developed by reverse-engineering the programmer's serial protocol. The library can program all servo settings, including direction, speed, deadband, range, soft-start, fail-safe, power-limit, overload-protection, and sensitivity. The library can also control the servo's motion, and read back the actual servo position.
 
-(Note: This library is not endorsed by Hitec, not guaranteed to work, and could potentially even damage your servo.)
+Note: This library is not endorsed by Hitec, not guaranteed to work, and could potentially even damage your servo.
+
+Note 2: As an alternative to this library, [this guide](https://gist.github.com/timmaxw/11b01f5703a1bc9f470ff810f17f3498) describes a way of using Hitec's official GUI application to program the servo even if you don't have a DPC-11 dongle. Hitec's official GUI supports a wider range of servo models than this library does.
 
 ## Pull-up resistor
 The library works with the servo attached to any digital pin, even if not PWM-capable. However, you must attach a 2-kiloohm pullup resistor between the digital pin and the +5V power supply. (If you're using a 3.3V microcontroller, then instead attach a 1-kiloohm pullup resistor between the digital pin and the +3.3V power supply.)
